@@ -38,7 +38,7 @@ public partial class ComboBox
                 var listHandle = _owningComboBox.GetListHandle();
                 RECT itemRect = default;
 
-                int result = (int)PInvoke.SendMessage(
+                int result = (int)PInvokeCore.SendMessage(
                     listHandle,
                     PInvoke.LB_GETITEMRECT,
                     (WPARAM)currentIndex,
@@ -51,7 +51,7 @@ public partial class ComboBox
 
                 // Translate the item rect to screen coordinates
                 RECT translated = itemRect;
-                PInvoke.MapWindowPoints(listHandle, HWND.Null, ref translated);
+                PInvokeCore.MapWindowPoints(listHandle, HWND.Null, ref translated);
                 return translated;
             }
         }
@@ -182,7 +182,7 @@ public partial class ComboBox
                 return;
             }
 
-            PInvoke.SendMessage(_owningComboBox, PInvoke.CB_SETTOPINDEX, (WPARAM)GetCurrentIndex());
+            PInvokeCore.SendMessage(_owningComboBox, PInvoke.CB_SETTOPINDEX, (WPARAM)GetCurrentIndex());
         }
 
         internal override void SetFocus()

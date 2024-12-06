@@ -151,7 +151,7 @@ public abstract partial class FileDialog : CommonDialog
         set => SetOption(OFN_NODEREFERENCELINKS, !value);
     }
 
-    private protected string DialogCaption => PInvoke.GetWindowText(_dialogHWnd);
+    private protected string DialogCaption => PInvokeCore.GetWindowText(_dialogHWnd);
 
     /// <summary>
     ///  Gets or sets a string containing the file name selected in the file dialog box.
@@ -491,7 +491,7 @@ public abstract partial class FileDialog : CommonDialog
     /// </summary>
     protected override unsafe IntPtr HookProc(IntPtr hWnd, int msg, IntPtr wparam, IntPtr lparam)
     {
-        if (msg != (int)PInvoke.WM_NOTIFY)
+        if (msg != (int)PInvokeCore.WM_NOTIFY)
         {
             return IntPtr.Zero;
         }
@@ -508,7 +508,7 @@ public abstract partial class FileDialog : CommonDialog
                     break;
                 case PInvoke.CDN_SELCHANGE:
                     // Get the buffer size required to store the selected file names.
-                    int sizeNeeded = (int)PInvoke.SendMessage(_dialogHWnd, PInvoke.CDM_GETSPEC);
+                    int sizeNeeded = (int)PInvokeCore.SendMessage(_dialogHWnd, PInvoke.CDM_GETSPEC);
                     if (sizeNeeded > notify->lpOFN->nMaxFile)
                     {
                         // A bigger buffer is required.

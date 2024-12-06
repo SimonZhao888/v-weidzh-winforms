@@ -7,7 +7,6 @@ ADVF
 AreDpiAwarenessContextsEqual
 ARW_*
 AUTOCOMPLETEOPTIONS
-BeginPaint
 BFFM_*
 BIF_*
 BITMAP
@@ -17,7 +16,6 @@ BN_*
 BROWSEINFOW
 BS_*
 CallNextHookEx
-CallWindowProc
 CB_*
 CBN_*
 CBS_*
@@ -41,7 +39,6 @@ CloseDesktop
 CloseEnhMetaFile
 CloseHandle
 CloseThemeData
-CLR_*
 CLSCTX
 cmb4
 CoGetClassObject
@@ -61,9 +58,7 @@ CreateILockBytesOnHGlobal
 CreateMenu
 CreateOleAdviseHolder
 CreatePatternBrush
-CreatePen
 CreateRectRgn
-CreateSolidBrush
 CreateStdAccessibleObject
 CreateWindowEx
 CSIDL_*
@@ -72,7 +67,6 @@ DATETIMEPICK_CLASS
 DeactivateActCtx
 DefFrameProc
 DefMDIChildProc
-DefWindowProc
 DeleteEnhMetaFile
 DESKTOP_ACCESS_FLAGS
 DestroyAcceleratorTable
@@ -117,20 +111,14 @@ ECO_*
 ECOOP_*
 ELEMDESC
 Ellipse
-EM_*
 EN_*
 EnableMenuItem
 EnableScrollBar
 EnableWindow
 EndDialog
-EndPaint
 ENM_*
-EnumChildWindows
-EnumDisplayMonitors
 EnumDisplaySettings
 EnumEnhMetaFile
-EnumThreadWindows
-EnumWindows
 ES_*
 EVENTMSG
 ExpandCollapseState
@@ -148,7 +136,6 @@ FUNCFLAGS
 FUNCKIND
 GDI_ERROR
 GDTR_*
-GET_CLASS_LONG_INDEX
 GET_MODULE_HANDLE_EX_FLAG*
 GetActiveWindow
 GetAncestor
@@ -174,7 +161,6 @@ GetCurrentProcess
 GetCurrentProcessId
 GetCurrentThemeName
 GetCurrentThread
-GetCurrentThreadId
 GetCursor
 GetCursorPos
 GetDIBits
@@ -214,7 +200,6 @@ GetScrollInfo
 GetShortPathName
 GetStartupInfo
 GetSysColor
-GetSysColorBrush
 GetSystemMenu
 GetSystemMetricsForDpi
 GetSystemPaletteEntries
@@ -254,9 +239,6 @@ GetViewportExtEx
 GetWindow
 GetWindowDpiAwarenessContext
 GetWindowPlacement
-GetWindowRect
-GetWindowText
-GetWindowTextLength
 GetWindowThreadProcessId
 GetWorldTransform
 GMR_*
@@ -277,6 +259,7 @@ HideCaret
 HitTestThemeBackground
 HT*
 HTML_HELP_COMMAND
+HtmlHelp
 HTREEITEM
 IAccessible
 IAccessibleEx
@@ -472,7 +455,6 @@ LVTILEVIEWINFO_FLAGS
 LVTILEVIEWINFO_MASK
 MA_*
 MapVirtualKey
-MapWindowPoints
 MAX_TAB_STOPS
 MCGRIDINFO
 MCGRIDINFO_FLAGS
@@ -530,8 +512,6 @@ NOTIFY_ICON_DATA_FLAGS
 NOTIFY_ICON_INFOTIP_FLAGS
 NOTIFY_ICON_MESSAGE
 NotifyWinEvent
-NTSTATUS
-OBJECT_IDENTIFIER
 OemKeyScan
 OLECLOSE
 OLECMDEXECOPT
@@ -558,8 +538,6 @@ PBM_*
 PBS_*
 PBST_*
 PD_RESULT_*
-PeekMessage
-PostMessage
 PostQuitMessage
 PostQuitMessage
 PostThreadMessage
@@ -569,7 +547,6 @@ PROPERTYKEY
 ProviderOptions
 ReadClassStg
 READYSTATE
-RealizePalette
 Rectangle
 RedrawWindow
 REGDB_E_CLASSNOTREG
@@ -593,16 +570,11 @@ ScreenToClient
 SCROLLBAR_COMMAND
 ScrollWindow
 ScrollWindowEx
-SelectObject
-SelectPalette
 SendDlgItemMessage
 SendInput
-SendMessage
 SendMessageCallback
 SendMessageTimeout
 SetActiveWindow
-SetBkColor
-SetBkMode
 SetCapture
 SetCursor
 SetCursorPos
@@ -610,18 +582,14 @@ SetFocus
 SetForegroundWindow
 SetKeyboardState
 SetLayeredWindowAttributes
-SetMapMode
 SetMenu
 SetParent
 SetProcessDPIAware
 SetProcessDpiAwareness
 SetProcessDpiAwarenessContext
-SetROP2
 SetScrollInfo
 SetScrollPos
 SetSuspendState
-SetTextAlign
-SetTextColor
 SetThemeAppProperties
 SetThreadDpiAwarenessContext
 SetThreadDpiHostingBehavior
@@ -660,8 +628,6 @@ SIGDN
 SIZE_*
 START_PAGE_GENERAL
 STATIC_STYLES
-STATUS_PENDING
-STATUS_SUCCESS
 STATUSCLASSNAME
 stc4
 STGC
@@ -669,7 +635,6 @@ StgCreateDocfileOnILockBytes
 STGMEDIUM
 StgOpenStorageOnILockBytes
 STGTY
-STILL_ACTIVE
 StretchDIBits
 StructureChangeType
 SYSBUTTONSTATES
@@ -763,7 +728,6 @@ WideCharToMultiByte
 WindowFromPoint
 WINDOWPOS
 WINEVENT_INCONTEXT
-WM_*
 WSF_VISIBLE
 XBUTTON1
 XBUTTON2

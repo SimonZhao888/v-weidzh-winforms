@@ -557,7 +557,7 @@ public partial class StatusStrip : ToolStrip
 
     protected override void WndProc(ref Message m)
     {
-        if ((m.Msg == (int)PInvoke.WM_NCHITTEST) && SizingGrip)
+        if ((m.Msg == (int)PInvokeCore.WM_NCHITTEST) && SizingGrip)
         {
             // if we're within the grip bounds tell windows
             // that we're the bottom right of the window.
@@ -586,7 +586,7 @@ public partial class StatusStrip : ToolStrip
                         gripLocation = new Point(SizeGripBounds.Right, SizeGripBounds.Bottom);
                     }
 
-                    PInvoke.MapWindowPoints(this, rootHwnd, ref gripLocation);
+                    PInvokeCore.MapWindowPoints(this, rootHwnd, ref gripLocation);
 
                     int deltaBottomEdge = Math.Abs(rootHwndClientArea.bottom - gripLocation.Y);
                     int deltaRightEdge = Math.Abs(rootHwndClientArea.right - gripLocation.X);
@@ -627,7 +627,7 @@ public partial class StatusStrip : ToolStrip
 
         protected override void WndProc(ref Message m)
         {
-            if (m.MsgInternal == PInvoke.WM_NCHITTEST)
+            if (m.MsgInternal == PInvokeCore.WM_NCHITTEST)
             {
                 if (ClientRectangle.Contains(PointToClient(PARAM.ToPoint(m.LParamInternal))))
                 {

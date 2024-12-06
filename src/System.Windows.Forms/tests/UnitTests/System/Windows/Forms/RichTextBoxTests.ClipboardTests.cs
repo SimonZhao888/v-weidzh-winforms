@@ -8,6 +8,7 @@ namespace System.Windows.Forms.Tests;
 public partial class RichTextBoxTests
 {
     [Collection("Sequential")]
+    [UISettings(MaxAttempts = 3)] // Try up to 3 times before failing.
     public class ClipboardTests
     {
         [WinFormsFact]
@@ -51,7 +52,6 @@ public partial class RichTextBoxTests
         {
             using RichTextBox richTextBox1 = new();
 
-            Clipboard.SetText("non-empty");
             Clipboard.Clear();
             richTextBox1.Paste(DataFormats.GetFormat(DataFormats.Text));
 

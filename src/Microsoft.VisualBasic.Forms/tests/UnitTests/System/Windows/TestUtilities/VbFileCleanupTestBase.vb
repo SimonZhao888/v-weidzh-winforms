@@ -41,7 +41,7 @@ Namespace Microsoft.VisualBasic.Forms.Tests
         '''  Even if directory exists this call will success and just return it.
         ''' </summary>
         ''' <param name="memberName"></param>
-        ''' <param name="lineNumber">If >1 use line number as part of name.</param>
+        ''' <param name="lineNumber">If >0 use line number as part of name.</param>
         ''' <returns>The name of a directory that is safe to write to and is verified to exist.</returns>
         Friend Function CreateTempDirectory(<CallerMemberName> Optional memberName As String = Nothing, Optional lineNumber As Integer = -1) As String
             Dim folder As String
@@ -68,7 +68,7 @@ Namespace Microsoft.VisualBasic.Forms.Tests
         '''  The full path and file name of the created file.
         '''  If size = -1 no file is create but the full path is returned.
         ''' </returns>
-        Friend Function CreateTempFile(sourceDirectoryName As String, Optional filename As String = "Testing.Txt", Optional size As Integer = -1) As String
+        Friend Shared Function CreateTempFile(sourceDirectoryName As String, Optional filename As String = "Testing.Txt", Optional size As Integer = -1) As String
             Dim filenameWithPath As String = Path.Combine(sourceDirectoryName, filename)
 
             If size >= 0 Then
@@ -109,7 +109,7 @@ Namespace Microsoft.VisualBasic.Forms.Tests
             GC.SuppressFinalize(Me)
         End Sub
 
-        Friend Function GetUniqueFileNameWithPath(testDirectory As String) As String
+        Friend Shared Function GetUniqueFileNameWithPath(testDirectory As String) As String
             Return Path.Combine(testDirectory, GetUniqueFileName())
         End Function
 

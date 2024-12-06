@@ -441,7 +441,7 @@ internal partial class OleDragDropHandler
         using SelectObjectScope brushSelection = new(dc, PInvokeCore.GetStockObject(GET_STOCK_OBJECT_FLAGS.NULL_BRUSH));
         using SelectObjectScope penSelection = new(dc, pen);
 
-        PInvoke.SetBkColor(dc, (COLORREF)(uint)ColorTranslator.ToWin32(graphicsColor));
+        PInvokeCore.SetBkColor(dc, (COLORREF)(uint)ColorTranslator.ToWin32(graphicsColor));
         PInvoke.Rectangle(dc, rectangle.X, rectangle.Y, rectangle.Right, rectangle.Bottom);
         // ------ Duplicate code----------------------------------------------------------
     }
@@ -488,7 +488,7 @@ internal partial class OleDragDropHandler
         // ensure that the drag can proceed without leaving artifacts lying around. We should be calling LockWindowUpdate,
         // but that causes a horrible flashing because GDI+ uses direct draw.
         MSG msg = default;
-        while (PInvoke.PeekMessage(&msg, HWND.Null, PInvoke.WM_PAINT, PInvoke.WM_PAINT, PEEK_MESSAGE_REMOVE_TYPE.PM_REMOVE))
+        while (PInvokeCore.PeekMessage(&msg, HWND.Null, PInvokeCore.WM_PAINT, PInvokeCore.WM_PAINT, PEEK_MESSAGE_REMOVE_TYPE.PM_REMOVE))
         {
             PInvoke.TranslateMessage(msg);
             PInvoke.DispatchMessage(&msg);
@@ -752,7 +752,7 @@ internal partial class OleDragDropHandler
                                 if (updateLocation)
                                 {
                                     oldDesignerControl = Destination.GetDesignerControl();
-                                    PInvoke.SendMessage(oldDesignerControl, PInvoke.WM_SETREDRAW, (WPARAM)(BOOL)false);
+                                    PInvokeCore.SendMessage(oldDesignerControl, PInvokeCore.WM_SETREDRAW, (WPARAM)(BOOL)false);
                                 }
 
                                 Point dropPt = Destination.GetDesignerControl().PointToClient(new Point(de.X, de.Y));
@@ -800,7 +800,7 @@ internal partial class OleDragDropHandler
                                 if (oldDesignerControl is not null)
                                 {
                                     // ((ComponentDataObject)dataObj).ShowControls();
-                                    PInvoke.SendMessage(oldDesignerControl, PInvoke.WM_SETREDRAW, (WPARAM)(BOOL)true);
+                                    PInvokeCore.SendMessage(oldDesignerControl, PInvokeCore.WM_SETREDRAW, (WPARAM)(BOOL)true);
                                     oldDesignerControl.Invalidate(true);
                                 }
 
@@ -965,15 +965,7 @@ internal partial class OleDragDropHandler
             Point convertedPoint = Destination.GetDesignerControl().PointToClient(new Point(de.X, de.Y));
 
             // draw the shadow rectangles.
-            Point newOffset;
-            if (_forceDrawFrames)
-            {
-                newOffset = convertedPoint;
-            }
-            else
-            {
-                newOffset = new Point(de.X - _dragBase.X, de.Y - _dragBase.Y);
-            }
+            Point newOffset = _forceDrawFrames ? convertedPoint : new Point(de.X - _dragBase.X, de.Y - _dragBase.Y);
 
             // Only allow drops on the client area.
             if (!Destination.GetDesignerControl().ClientRectangle.Contains(convertedPoint))
@@ -1035,28 +1027,16 @@ internal partial class OleDragDropHandler
             components = cdo.Components;
         }
 
-        if (!topLevelOnly || components is null)
-        {
-            return components;
-        }
-
-        return GetTopLevelComponents(components);
+        return !topLevelOnly || components is null ? components : GetTopLevelComponents(components);
     }
 
-    public static object[]? GetDraggingObjects(IDataObject? dataObj)
-    {
-        return GetDraggingObjects(dataObj, false);
-    }
+    public static object[]? GetDraggingObjects(IDataObject? dataObj) => GetDraggingObjects(dataObj, topLevelOnly: false);
 
-    public static object[]? GetDraggingObjects(DragEventArgs de)
-    {
-        return GetDraggingObjects(de.Data);
-    }
+    public static object[]? GetDraggingObjects(DragEventArgs de) => GetDraggingObjects(de.Data);
 
     private static object[] GetTopLevelComponents(ICollection comps)
     {
         // Filter the top-level components.
-        //
         if (comps is not IList)
         {
             comps = new ArrayList(comps);

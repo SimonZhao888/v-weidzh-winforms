@@ -136,7 +136,7 @@ public unsafe partial class NativeWindow : MarshalByRefObject, IWin32Window, IHa
         if (!handle.IsNull && ownedHandle)
         {
             // If we owned the handle, post a WM_CLOSE to get rid of it.
-            PInvoke.PostMessage(handle, PInvoke.WM_CLOSE);
+            PInvokeCore.PostMessage(handle, PInvokeCore.WM_CLOSE);
         }
     }
 
@@ -366,7 +366,7 @@ public unsafe partial class NativeWindow : MarshalByRefObject, IWin32Window, IHa
         }
         finally
         {
-            if (msg == PInvoke.WM_NCDESTROY)
+            if (msg == PInvokeCore.WM_NCDESTROY)
             {
                 ReleaseHandle(handleValid: false);
             }
@@ -504,11 +504,11 @@ public unsafe partial class NativeWindow : MarshalByRefObject, IWin32Window, IHa
 
                 // At this point, there isn't much we can do. There's a small chance the following
                 // line will allow the rest of the program to run, but don't get your hopes up.
-                m.ResultInternal = PInvoke.DefWindowProc(m.HWND, (uint)m.Msg, m.WParamInternal, m.LParamInternal);
+                m.ResultInternal = PInvokeCore.DefWindowProc(m.HWND, (uint)m.Msg, m.WParamInternal, m.LParamInternal);
                 return;
             }
 
-            m.ResultInternal = PInvoke.CallWindowProc(
+            m.ResultInternal = PInvokeCore.CallWindowProc(
                 _priorWindowProcHandle,
                 m.HWND,
                 (uint)m.Msg,
@@ -535,7 +535,7 @@ public unsafe partial class NativeWindow : MarshalByRefObject, IWin32Window, IHa
                     UnSubclass();
 
                     // Now post a close and let it do whatever it needs to do on its own.
-                    PInvoke.PostMessage(this, PInvoke.WM_CLOSE);
+                    PInvokeCore.PostMessage(this, PInvokeCore.WM_CLOSE);
                 }
 
                 HWND = HWND.Null;
@@ -557,15 +557,10 @@ public unsafe partial class NativeWindow : MarshalByRefObject, IWin32Window, IHa
     /// <summary>
     ///  Returns the native window for the given handle, or null if the handle is not in our hash table.
     /// </summary>
-    private static NativeWindow? GetWindowFromTable(HWND handle)
-    {
-        if (s_windowHandles.TryGetValue(handle, out GCHandle value) && value.IsAllocated)
-        {
-            return (NativeWindow?)value.Target;
-        }
-
-        return null;
-    }
+    private static NativeWindow? GetWindowFromTable(HWND handle) =>
+        s_windowHandles.TryGetValue(handle, out GCHandle value) && value.IsAllocated
+            ? (NativeWindow?)value.Target
+            : null;
 
     /// <summary>
     ///  Returns the handle from the given <paramref name="id"/> if found, otherwise returns
@@ -620,8 +615,8 @@ public unsafe partial class NativeWindow : MarshalByRefObject, IWin32Window, IHa
                     if (!handle.IsNull && handle != (HWND)(-1))
                     {
                         PInvokeCore.SetWindowLong(handle, WINDOW_LONG_PTR_INDEX.GWL_WNDPROC, DefaultWindowProc);
-                        PInvoke.SetClassLong(handle, GET_CLASS_LONG_INDEX.GCL_WNDPROC, DefaultWindowProc);
-                        PInvoke.PostMessage(handle, PInvoke.WM_CLOSE);
+                        PInvokeCore.SetClassLong(handle, GET_CLASS_LONG_INDEX.GCL_WNDPROC, DefaultWindowProc);
+                        PInvokeCore.PostMessage(handle, PInvokeCore.WM_CLOSE);
 
                         // Fish out the Window object, if it is valid, and NULL the handle pointer. This
                         // way the rest of WinForms won't think the handle is still valid here.
@@ -906,12 +901,12 @@ public unsafe partial class NativeWindow : MarshalByRefObject, IWin32Window, IHa
     {
         switch (m.MsgInternal)
         {
-            case PInvoke.WM_DPICHANGED_BEFOREPARENT:
+            case PInvokeCore.WM_DPICHANGED_BEFOREPARENT:
                 WmDpiChangedBeforeParent(ref m);
                 m.ResultInternal = (LRESULT)0;
                 break;
 
-            case PInvoke.WM_DPICHANGED_AFTERPARENT:
+            case PInvokeCore.WM_DPICHANGED_AFTERPARENT:
                 WmDpiChangedAfterParent(ref m);
                 m.ResultInternal = (LRESULT)0;
                 break;

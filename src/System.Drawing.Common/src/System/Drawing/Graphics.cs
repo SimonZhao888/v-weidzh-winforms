@@ -79,10 +79,7 @@ public sealed unsafe partial class Graphics : MarshalByRefObject, IDisposable, I
     [EditorBrowsable(EditorBrowsableState.Advanced)]
     public static Graphics FromHdc(IntPtr hdc)
     {
-        if (hdc == IntPtr.Zero)
-            throw new ArgumentNullException(nameof(hdc));
-
-        return FromHdcInternal(hdc);
+        return hdc == 0 ? throw new ArgumentNullException(nameof(hdc)) : FromHdcInternal(hdc);
     }
 
     [EditorBrowsable(EditorBrowsableState.Advanced)]
@@ -583,7 +580,7 @@ public sealed unsafe partial class Graphics : MarshalByRefObject, IDisposable, I
 
     public void TranslateClip(int dx, int dy) => CheckStatus(PInvoke.GdipTranslateClip(NativeGraphics, dx, dy));
 
-    public bool IsVisible(int x, int y) => IsVisible(new Point(x, y));
+    public bool IsVisible(int x, int y) => IsVisible((float)x, y);
 
     public bool IsVisible(Point point) => IsVisible(point.X, point.Y);
 
@@ -3522,31 +3519,19 @@ public sealed unsafe partial class Graphics : MarshalByRefObject, IDisposable, I
 
     public static IntPtr GetHalftonePalette()
     {
-        if (s_halftonePalette == IntPtr.Zero)
+        if (s_halftonePalette.IsNull)
         {
             lock (s_syncObject)
             {
-                if (s_halftonePalette == IntPtr.Zero)
+                if (s_halftonePalette.IsNull)
                 {
-                    AppDomain.CurrentDomain.DomainUnload += OnDomainUnload;
-                    AppDomain.CurrentDomain.ProcessExit += OnDomainUnload;
-
-                    s_halftonePalette = PInvoke.GdipCreateHalftonePalette();
+                    GdiPlusInitialization.EnsureInitialized();
+                    s_halftonePalette = PInvokeCore.GdipCreateHalftonePalette();
                 }
             }
         }
 
         return s_halftonePalette;
-    }
-
-    // This is called from AppDomain.ProcessExit and AppDomain.DomainUnload.
-    private static void OnDomainUnload(object? sender, EventArgs e)
-    {
-        if (!s_halftonePalette.IsNull)
-        {
-            PInvokeCore.DeleteObject(s_halftonePalette);
-            s_halftonePalette = HPALETTE.Null;
-        }
     }
 
     /// <summary>

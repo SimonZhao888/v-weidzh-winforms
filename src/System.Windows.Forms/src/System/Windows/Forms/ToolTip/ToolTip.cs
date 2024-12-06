@@ -114,7 +114,7 @@ public partial class ToolTip : Component, IExtenderProvider, IHandle<HWND>
                 // Don't activate the tooltip if we're in the designer.
                 if (!DesignMode && GetHandleCreated())
                 {
-                    PInvoke.SendMessage(this, PInvoke.TTM_ACTIVATE, (WPARAM)(BOOL)value);
+                    PInvokeCore.SendMessage(this, PInvoke.TTM_ACTIVATE, (WPARAM)(BOOL)value);
                 }
             }
         }
@@ -180,7 +180,7 @@ public partial class ToolTip : Component, IExtenderProvider, IHandle<HWND>
             _backColor = value;
             if (GetHandleCreated())
             {
-                PInvoke.SendMessage(this, PInvoke.TTM_SETTIPBKCOLOR, (WPARAM)_backColor);
+                PInvokeCore.SendMessage(this, PInvoke.TTM_SETTIPBKCOLOR, (WPARAM)_backColor);
             }
         }
     }
@@ -249,7 +249,7 @@ public partial class ToolTip : Component, IExtenderProvider, IHandle<HWND>
             _foreColor = value;
             if (GetHandleCreated())
             {
-                PInvoke.SendMessage(this, PInvoke.TTM_SETTIPTEXTCOLOR, (WPARAM)_foreColor);
+                PInvokeCore.SendMessage(this, PInvoke.TTM_SETTIPTEXTCOLOR, (WPARAM)_foreColor);
             }
         }
     }
@@ -434,11 +434,11 @@ public partial class ToolTip : Component, IExtenderProvider, IHandle<HWND>
                 {
                     // If the title is null/empty, the icon won't display.
                     string title = !string.IsNullOrEmpty(_toolTipTitle) ? _toolTipTitle : " ";
-                    PInvoke.SendMessage(this, PInvoke.TTM_SETTITLEW, (uint)_toolTipIcon, title);
+                    PInvokeCore.SendMessage(this, PInvoke.TTM_SETTITLEW, (uint)_toolTipIcon, title);
 
                     // Tooltip need to be updated to reflect the changes in the icon because
                     // this operation directly affects the size of the tooltip.
-                    PInvoke.SendMessage(this, PInvoke.TTM_UPDATE);
+                    PInvokeCore.SendMessage(this, PInvoke.TTM_UPDATE);
                 }
             }
         }
@@ -462,11 +462,11 @@ public partial class ToolTip : Component, IExtenderProvider, IHandle<HWND>
                 _toolTipTitle = value;
                 if (GetHandleCreated())
                 {
-                    PInvoke.SendMessage(this, PInvoke.TTM_SETTITLEW, (uint)_toolTipIcon, _toolTipTitle);
+                    PInvokeCore.SendMessage(this, PInvoke.TTM_SETTITLEW, (uint)_toolTipIcon, _toolTipTitle);
 
                     // Tooltip need to be updated to reflect the changes in the title text because
                     // this operation directly affects the size of the tooltip.
-                    PInvoke.SendMessage(this, PInvoke.TTM_UPDATE);
+                    PInvokeCore.SendMessage(this, PInvoke.TTM_UPDATE);
                 }
             }
         }
@@ -729,7 +729,7 @@ public partial class ToolTip : Component, IExtenderProvider, IHandle<HWND>
         }
 
         // Setting the max width has the added benefit of enabling multiline tool tips.
-        PInvoke.SendMessage(this, PInvoke.TTM_SETMAXTIPWIDTH, 0, SystemInformation.MaxWindowTrackSize.Width);
+        PInvokeCore.SendMessage(this, PInvoke.TTM_SETMAXTIPWIDTH, 0, SystemInformation.MaxWindowTrackSize.Width);
 
         if (_auto)
         {
@@ -768,23 +768,23 @@ public partial class ToolTip : Component, IExtenderProvider, IHandle<HWND>
         }
 
         // Set active status.
-        PInvoke.SendMessage(this, PInvoke.TTM_ACTIVATE, (WPARAM)(BOOL)_active);
+        PInvokeCore.SendMessage(this, PInvoke.TTM_ACTIVATE, (WPARAM)(BOOL)_active);
 
         if (BackColor != SystemColors.Info)
         {
-            PInvoke.SendMessage(this, PInvoke.TTM_SETTIPBKCOLOR, (WPARAM)BackColor);
+            PInvokeCore.SendMessage(this, PInvoke.TTM_SETTIPBKCOLOR, (WPARAM)BackColor);
         }
 
         if (ForeColor != SystemColors.InfoText)
         {
-            PInvoke.SendMessage(this, PInvoke.TTM_SETTIPTEXTCOLOR, (WPARAM)ForeColor);
+            PInvokeCore.SendMessage(this, PInvoke.TTM_SETTIPTEXTCOLOR, (WPARAM)ForeColor);
         }
 
         if (_toolTipIcon > 0 || !string.IsNullOrEmpty(_toolTipTitle))
         {
             // If the title is null/empty, the icon won't display.
             string title = !string.IsNullOrEmpty(_toolTipTitle) ? _toolTipTitle : " ";
-            PInvoke.SendMessage(this, PInvoke.TTM_SETTITLEW, (WPARAM)(int)_toolTipIcon, title);
+            PInvokeCore.SendMessage(this, PInvoke.TTM_SETTITLEW, (WPARAM)(int)_toolTipIcon, title);
         }
     }
 
@@ -961,7 +961,7 @@ public partial class ToolTip : Component, IExtenderProvider, IHandle<HWND>
             return _delayTimes[(int)type];
         }
 
-        return (int)PInvoke.SendMessage(this, PInvoke.TTM_GETDELAYTIME, (WPARAM)type);
+        return (int)PInvokeCore.SendMessage(this, PInvoke.TTM_GETDELAYTIME, (WPARAM)type);
     }
 
     internal bool GetHandleCreated() => _window is not null && _window.Handle != IntPtr.Zero;
@@ -1178,7 +1178,7 @@ public partial class ToolTip : Component, IExtenderProvider, IHandle<HWND>
 
         if (GetHandleCreated() && time >= 0)
         {
-            PInvoke.SendMessage(this, PInvoke.TTM_SETDELAYTIME, (WPARAM)type, (LPARAM)time);
+            PInvokeCore.SendMessage(this, PInvoke.TTM_SETDELAYTIME, (WPARAM)type, (LPARAM)time);
             if (type == PInvoke.TTDT_AUTOPOP && time != InfiniteDelay)
             {
                 IsPersistent = false;
@@ -1308,7 +1308,7 @@ public partial class ToolTip : Component, IExtenderProvider, IHandle<HWND>
 
         if (window is Control associatedControl)
         {
-            PInvoke.GetWindowRect(associatedControl, out var rect);
+            PInvokeCore.GetWindowRect(associatedControl, out var rect);
 
             _ = Cursor.Current;
             Point cursorLocation = Cursor.Position;
@@ -1406,7 +1406,7 @@ public partial class ToolTip : Component, IExtenderProvider, IHandle<HWND>
         if (IsWindowActive(window))
         {
             // Set the ToolTips.
-            PInvoke.GetWindowRect(Control.GetSafeHandle(window), out var r);
+            PInvokeCore.GetWindowRect(Control.GetSafeHandle(window), out var r);
             int pointX = r.left + point.X;
             int pointY = r.top + point.Y;
 
@@ -1426,7 +1426,7 @@ public partial class ToolTip : Component, IExtenderProvider, IHandle<HWND>
         if (IsWindowActive(window))
         {
             // Set the ToolTips.
-            PInvoke.GetWindowRect(Control.GetSafeHandle(window), out var r);
+            PInvokeCore.GetWindowRect(Control.GetSafeHandle(window), out var r);
             int pointX = r.left + point.X;
             int pointY = r.top + point.Y;
             SetTrackPosition(pointX, pointY);
@@ -1444,7 +1444,7 @@ public partial class ToolTip : Component, IExtenderProvider, IHandle<HWND>
 
         if (IsWindowActive(window))
         {
-            PInvoke.GetWindowRect(Control.GetSafeHandle(window), out var r);
+            PInvokeCore.GetWindowRect(Control.GetSafeHandle(window), out var r);
             int pointX = r.left + x;
             int pointY = r.top + y;
             SetTrackPosition(pointX, pointY);
@@ -1462,7 +1462,7 @@ public partial class ToolTip : Component, IExtenderProvider, IHandle<HWND>
 
         if (IsWindowActive(window))
         {
-            PInvoke.GetWindowRect(Control.GetSafeHandle(window), out var r);
+            PInvokeCore.GetWindowRect(Control.GetSafeHandle(window), out var r);
             int pointX = r.left + x;
             int pointY = r.top + y;
             SetTrackPosition(pointX, pointY);
@@ -1706,7 +1706,7 @@ public partial class ToolTip : Component, IExtenderProvider, IHandle<HWND>
         try
         {
             _trackPosition = true;
-            PInvoke.SendMessage(this, PInvoke.TTM_TRACKPOSITION, 0, PARAM.FromLowHigh(pointX, pointY));
+            PInvokeCore.SendMessage(this, PInvoke.TTM_TRACKPOSITION, 0, PARAM.FromLowHigh(pointX, pointY));
         }
         finally
         {
@@ -1935,6 +1935,11 @@ public partial class ToolTip : Component, IExtenderProvider, IHandle<HWND>
             moveToLocation.X = screen.WorkingArea.Right - tipSize.Width;
         }
 
+        if (moveToLocation.X < screen.WorkingArea.Left)
+        {
+            moveToLocation.X = screen.WorkingArea.Left;
+        }
+
         // re-adjust the Y position of the tool tip if it bleeds off the screen working area.
         if (moveToLocation.Y + tipSize.Height > screen.WorkingArea.Bottom)
         {
@@ -1981,7 +1986,7 @@ public partial class ToolTip : Component, IExtenderProvider, IHandle<HWND>
 
         // Reposition the tooltip when its about to be shown since the tooltip can go out of screen
         // working area bounds Reposition would check the bounds for us.
-        PInvoke.GetWindowRect(this, out var rectangle);
+        PInvokeCore.GetWindowRect(this, out var rectangle);
         if (tipInfo.Position != Point.Empty)
         {
             Reposition(tipInfo.Position, rectangle.Size);
@@ -1999,7 +2004,7 @@ public partial class ToolTip : Component, IExtenderProvider, IHandle<HWND>
             return;
         }
 
-        PInvoke.GetWindowRect(Control.GetSafeHandle(window), out var r);
+        PInvokeCore.GetWindowRect(Control.GetSafeHandle(window), out var r);
         Point cursorLocation = Cursor.Position;
 
         // Do not activate the mouse if its within the bounds of the
@@ -2033,7 +2038,7 @@ public partial class ToolTip : Component, IExtenderProvider, IHandle<HWND>
         }
 
         // Get the bounds.
-        PInvoke.GetWindowRect(this, out var rect);
+        PInvokeCore.GetWindowRect(this, out var rect);
 
         Control? toolControl = window as Control;
 
@@ -2052,20 +2057,20 @@ public partial class ToolTip : Component, IExtenderProvider, IHandle<HWND>
             // Use GetWindowText instead of GetCaptionForTool to retrieve the actual caption.
             // GetCaptionForTool doesn't work correctly when the text for a tool is retrieved
             // by TTN_NEEDTEXT notification (e.g. TabPages of TabControl).
-            AnnounceText(toolControl, PInvoke.GetWindowText(this));
+            AnnounceText(toolControl, PInvokeCore.GetWindowText(this));
         }
 
         // We need to re-get the rectangle of the tooltip here because
         // any of the tooltip attributes/properties could have been updated
         // during the popup event; in which case the size of the tooltip is
         // affected. e.ToolTipSize is respected over rect.Size
-        PInvoke.GetWindowRect(this, out rect);
+        PInvokeCore.GetWindowRect(this, out rect);
         currentTooltipSize = (e.ToolTipSize == currentTooltipSize) ? rect.Size : e.ToolTipSize;
 
         if (IsBalloon)
         {
             // Get the text display rectangle
-            PInvoke.SendMessage(this, PInvoke.TTM_ADJUSTRECT, (WPARAM)(BOOL)true, ref rect);
+            PInvokeCore.SendMessage(this, PInvoke.TTM_ADJUSTRECT, (WPARAM)(BOOL)true, ref rect);
             if (rect.Height > currentTooltipSize.Height)
             {
                 currentTooltipSize.Height = rect.Height;
@@ -2082,7 +2087,7 @@ public partial class ToolTip : Component, IExtenderProvider, IHandle<HWND>
             int maxwidth = (IsBalloon)
                 ? Math.Min(currentTooltipSize.Width - 2 * BalloonOffsetX, screen.WorkingArea.Width)
                 : Math.Min(currentTooltipSize.Width, screen.WorkingArea.Width);
-            PInvoke.SendMessage(this, PInvoke.TTM_SETMAXTIPWIDTH, 0, maxwidth);
+            PInvokeCore.SendMessage(this, PInvoke.TTM_SETMAXTIPWIDTH, 0, maxwidth);
         }
 
         if (e.Cancel)
@@ -2232,7 +2237,7 @@ public partial class ToolTip : Component, IExtenderProvider, IHandle<HWND>
         if ((tipInfo.TipType & TipInfo.Type.Auto) != 0 || (tipInfo.TipType & TipInfo.Type.SemiAbsolute) != 0)
         {
             Screen screen = Screen.FromPoint(Cursor.Position);
-            PInvoke.SendMessage(this, PInvoke.TTM_SETMAXTIPWIDTH, 0, screen.WorkingArea.Width);
+            PInvokeCore.SendMessage(this, PInvoke.TTM_SETMAXTIPWIDTH, 0, screen.WorkingArea.Width);
         }
 
         // For non-auto tips (those shown through the show(.) methods, we need to
@@ -2279,11 +2284,11 @@ public partial class ToolTip : Component, IExtenderProvider, IHandle<HWND>
 
                 break;
 
-            case (int)PInvoke.WM_WINDOWPOSCHANGING:
+            case (int)PInvokeCore.WM_WINDOWPOSCHANGING:
                 WmWindowPosChanging(ref message);
                 break;
 
-            case (int)PInvoke.WM_WINDOWPOSCHANGED:
+            case (int)PInvokeCore.WM_WINDOWPOSCHANGED:
                 if (!WmWindowPosChanged() && _window is not null)
                 {
                     _window.DefWndProc(ref message);
@@ -2291,11 +2296,11 @@ public partial class ToolTip : Component, IExtenderProvider, IHandle<HWND>
 
                 break;
 
-            case (int)PInvoke.WM_MOUSEACTIVATE:
+            case (int)PInvokeCore.WM_MOUSEACTIVATE:
                 WmMouseActivate(ref message);
                 break;
 
-            case (int)PInvoke.WM_MOVE:
+            case (int)PInvokeCore.WM_MOVE:
                 WmMove();
                 break;
 
@@ -2303,10 +2308,10 @@ public partial class ToolTip : Component, IExtenderProvider, IHandle<HWND>
                 WmWindowFromPoint(ref message);
                 break;
 
-            case (int)PInvoke.WM_PRINTCLIENT:
-                goto case (int)PInvoke.WM_PAINT;
+            case (int)PInvokeCore.WM_PRINTCLIENT:
+                goto case (int)PInvokeCore.WM_PAINT;
 
-            case (int)PInvoke.WM_PAINT:
+            case (int)PInvokeCore.WM_PAINT:
                 if (OwnerDraw && !_isBalloon && !_trackPosition)
                 {
                     using BeginPaintScope paintScope = new(HWND);
@@ -2324,7 +2329,7 @@ public partial class ToolTip : Component, IExtenderProvider, IHandle<HWND>
                         Font font;
                         try
                         {
-                            font = Font.FromHfont(PInvoke.SendMessage(this, PInvoke.WM_GETFONT));
+                            font = Font.FromHfont(PInvokeCore.SendMessage(this, PInvokeCore.WM_GETFONT));
                         }
                         catch (ArgumentException)
                         {

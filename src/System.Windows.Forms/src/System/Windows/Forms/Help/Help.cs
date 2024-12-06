@@ -146,7 +146,7 @@ public static class Help
             }
             else if (htmlParam is int intParam)
             {
-                PInvoke.HtmlHelp(handle, pathAndFileName, htmlCommand, in intParam);
+                PInvoke.HtmlHelp(handle, pathAndFileName, htmlCommand, (nuint)intParam);
             }
             else if (htmlParam is HH_FTS_QUERY query)
             {
@@ -221,7 +221,7 @@ public static class Help
     private static unsafe string? FindExecutableInternal(string uri)
     {
         HINSTANCE result;
-        Span<char> buffer = stackalloc char[PInvoke.MAX_PATH + 1];
+        Span<char> buffer = stackalloc char[(int)PInvokeCore.MAX_PATH + 1];
         fixed (char* lpFileLocal = uri)
         {
             fixed (char* b = buffer)

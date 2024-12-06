@@ -201,8 +201,10 @@ internal unsafe partial class Com2PropertyDescriptor : PropertyDescriptor, IClon
             // If we are forcing a hide.
             if (_typeHide && CanShow)
             {
-                newAttributes ??= new(AttributeArray);
-                newAttributes.Add(new BrowsableAttribute(false));
+                newAttributes = new(AttributeArray)
+                {
+                    new BrowsableAttribute(false)
+                };
             }
             else if (_hrHidden)
             {
@@ -216,8 +218,11 @@ internal unsafe partial class Com2PropertyDescriptor : PropertyDescriptor, IClon
                     if (hr.Succeeded)
                     {
                         // Make it browsable.
-                        newAttributes ??= new(AttributeArray);
-                        newAttributes.Add(new BrowsableAttribute(true));
+                        newAttributes = new(AttributeArray)
+                        {
+                            new BrowsableAttribute(true)
+                        };
+
                         _hrHidden = false;
                     }
                 }
@@ -687,11 +692,13 @@ internal unsafe partial class Com2PropertyDescriptor : PropertyDescriptor, IClon
         // We don't do this if the state came from an attribute.
         if ((_refreshState & Com2PropertyDescriptorRefresh.TypeConverterAttr) == 0 && PropertyType == typeof(Com2Variant))
         {
-            Type editorType = PropertyType;
+            // The results were never used here, they probably were intended to be used.
+            // Without specific scenarios, leaving the access as is to avoid breaking changes.
+            _ = PropertyType;
             object? value = GetValue(TargetObject);
             if (value is not null)
             {
-                editorType = value.GetType();
+                _ = value.GetType();
             }
 
             ComNativeDescriptor.ResolveVariantTypeConverterAndTypeEditor(value, ref localConverter, editorBaseType, ref localEditor);

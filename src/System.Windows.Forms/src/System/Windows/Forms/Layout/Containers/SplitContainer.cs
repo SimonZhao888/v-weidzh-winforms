@@ -449,10 +449,10 @@ public partial class SplitContainer : ContainerControl, ISupportInitialize
             {
                 // We want to instantly change the cursor if the mouse is within our bounds.
                 PInvoke.GetCursorPos(out Point p);
-                PInvoke.GetWindowRect(this, out var r);
+                PInvokeCore.GetWindowRect(this, out var r);
                 if ((r.left <= p.X && p.X < r.right && r.top <= p.Y && p.Y < r.bottom) || PInvoke.GetCapture() == HWND)
                 {
-                    PInvoke.SendMessage(this, PInvoke.WM_SETCURSOR, (WPARAM)HWND, (LPARAM)(int)PInvoke.HTCLIENT);
+                    PInvokeCore.SendMessage(this, PInvokeCore.WM_SETCURSOR, (WPARAM)HWND, (LPARAM)(int)PInvoke.HTCLIENT);
                 }
             }
         }
@@ -2400,14 +2400,14 @@ public partial class SplitContainer : ContainerControl, ISupportInitialize
     {
         switch (msg.MsgInternal)
         {
-            case PInvoke.WM_SETCURSOR:
+            case PInvokeCore.WM_SETCURSOR:
                 WmSetCursor(ref msg);
                 break;
-            case PInvoke.WM_SETFOCUS:
+            case PInvokeCore.WM_SETFOCUS:
                 _splitterFocused = true;
                 base.WndProc(ref msg);
                 break;
-            case PInvoke.WM_KILLFOCUS:
+            case PInvokeCore.WM_KILLFOCUS:
                 _splitterFocused = false;
                 base.WndProc(ref msg);
                 break;

@@ -57,7 +57,7 @@ public static partial class ToolStripManager
                 return Control.DefaultFont;
             }
 
-            Font? sysFont = null;
+            Font? sysFont;
 
             // We need to cache the default fonts for the different DPIs.
             if (ScaleHelper.IsThreadPerMonitorV2Aware)
@@ -740,7 +740,7 @@ public static partial class ToolStripManager
             return ProcessShortcut(ref m, keyData);
         }
 
-        if (m.Msg == (int)PInvoke.WM_SYSKEYDOWN)
+        if (m.Msg == (int)PInvokeCore.WM_SYSKEYDOWN)
         {
             ModalMenuFilter.ProcessMenuKeyDown(ref m);
         }

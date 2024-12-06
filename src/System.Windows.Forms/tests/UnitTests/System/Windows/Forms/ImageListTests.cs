@@ -4,7 +4,6 @@
 using System.ComponentModel;
 using System.Drawing;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Windows.Forms.TestUtilities;
 
 namespace System.Windows.Forms.Tests;
 
@@ -665,9 +664,9 @@ public class ImageListTests
 
     public static IEnumerable<object[]> TransparentColor_Set_TestData()
     {
-        foreach (object[] testData in CommonTestHelper.GetColorWithEmptyTheoryData())
+        foreach (Color testData in CommonTestHelper.GetColorWithEmptyTheoryData())
         {
-            yield return testData;
+            yield return [testData];
         }
 
         yield return new object[] { Color.LightGray };
@@ -836,8 +835,8 @@ public class ImageListTests
 
         list.Dispose();
         Assert.False(list.HandleCreated);
-        Assert.Throws<ObjectDisposedException>(() => list.Images.GetEnumerator());
-        Assert.Equal(0, list.Images.Count);
+        Assert.Throws<ObjectDisposedException>(list.Images.GetEnumerator);
+        list.Images.Count.Should().Be(0);
         Assert.True(list.HandleCreated);
 
         // Call again.

@@ -28,7 +28,7 @@ public class ListViewSubItemCollectionTests
     {
         ListViewItem item = new();
         IList collection = new ListViewItem.ListViewSubItemCollection(item);
-        Assert.Equal(0, collection.Count);
+        Assert.Empty(collection);
         Assert.False(collection.IsFixedSize);
         Assert.False(collection.IsReadOnly);
         Assert.True(collection.IsSynchronized);
@@ -227,7 +227,6 @@ public class ListViewSubItemCollectionTests
         ListViewItem item = new();
         var collection = new ListViewItem.ListViewSubItemCollection(item);
 
-        ListViewItem otherItem = new();
         var otherCollection = new ListViewItem.ListViewSubItemCollection(item);
 
         var subItem = new ListViewItem.ListViewSubItem();
@@ -1112,7 +1111,7 @@ public class ListViewSubItemCollectionTests
         ListViewItem listViewItem = new("Test 1");
         ListViewItem.ListViewSubItem oldSubItem = listViewItem.SubItems[0];
         oldSubItem.Name = "Test 1";
-        ListViewItem.ListViewSubItem subItem = new(listViewItem, "Test 2") { Name = "Test 2"  };
+        ListViewItem.ListViewSubItem subItem = new(listViewItem, "Test 2") { Name = "Test 2" };
         listViewItem.SubItems.Add(subItem);
 
         Assert.Same(listViewItem, subItem._owner);

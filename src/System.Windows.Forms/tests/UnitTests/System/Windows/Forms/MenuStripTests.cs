@@ -681,7 +681,7 @@ public class MenuStripTests
     public void MenuStirp_ProcessCmdKey_InvokeWithoutParent_ReturnsFalse(Keys keyData)
     {
         using SubMenuStrip control = new();
-        Message m = new();
+        Message m = default;
         Assert.False(control.ProcessCmdKey(ref m, keyData));
         Assert.False(control.IsHandleCreated);
     }
@@ -699,7 +699,7 @@ public class MenuStripTests
         {
             Parent = parent
         };
-        Message msg = new();
+        Message msg = default;
         Assert.False(control.ProcessCmdKey(ref msg, keyData));
         Assert.False(control.IsHandleCreated);
     }
@@ -751,7 +751,7 @@ public class MenuStripTests
         using SubMenuStrip control = new();
         Message m = new()
         {
-            Msg = (int)PInvoke.WM_MOUSEACTIVATE,
+            Msg = (int)PInvokeCore.WM_MOUSEACTIVATE,
             Result = 250
         };
         control.WndProc(ref m);
@@ -776,7 +776,7 @@ public class MenuStripTests
 
         Message m = new()
         {
-            Msg = (int)PInvoke.WM_MOUSEACTIVATE,
+            Msg = (int)PInvokeCore.WM_MOUSEACTIVATE,
             Result = 250
         };
         control.WndProc(ref m);
@@ -808,7 +808,7 @@ public class MenuStripTests
         };
         Message m = new()
         {
-            Msg = (int)PInvoke.WM_MOUSEHOVER,
+            Msg = (int)PInvokeCore.WM_MOUSEHOVER,
             Result = 250
         };
         control.WndProc(ref m);

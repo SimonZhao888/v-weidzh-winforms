@@ -148,7 +148,6 @@ public partial class ToolStrip : ScrollableControl, IArrangedElement, ISupportTo
         Dock = DefaultDock;
         AutoSize = true;
         CausesValidation = false;
-        Size defaultSize = DefaultSize;
         SetAutoSizeMode(AutoSizeMode.GrowAndShrink);
         ShowItemToolTips = DefaultShowItemToolTips;
         ResumeLayout(true);
@@ -538,10 +537,9 @@ public partial class ToolStrip : ScrollableControl, IArrangedElement, ISupportTo
     ///  Deriving classes can override this to configure a default size for their control.
     ///  This is more efficient than setting the size in the control's constructor.
     /// </summary>
-    protected override Size DefaultSize
-        => ScaleHelper.IsThreadPerMonitorV2Aware ?
-           ScaleHelper.ScaleToDpi(new Size(100, 25), DeviceDpi) :
-           new Size(100, 25);
+    protected override Size DefaultSize => ScaleHelper.IsThreadPerMonitorV2Aware
+        ? ScaleHelper.ScaleToDpi(new Size(100, 25), DeviceDpi)
+        : new Size(100, 25);
 
     protected override Padding DefaultPadding
     {
@@ -553,41 +551,14 @@ public partial class ToolStrip : ScrollableControl, IArrangedElement, ISupportTo
         }
     }
 
-    protected override Padding DefaultMargin
-    {
-        get { return Padding.Empty; }
-    }
+    protected override Padding DefaultMargin => Padding.Empty;
 
-    protected virtual DockStyle DefaultDock
-    {
-        get
-        {
-            return DockStyle.Top;
-        }
-    }
+    protected virtual DockStyle DefaultDock => DockStyle.Top;
 
-    protected virtual Padding DefaultGripMargin
-    {
-        get
-        {
-            if (_toolStripGrip is not null)
-            {
-                return _toolStripGrip.DefaultMargin;
-            }
-            else
-            {
-                return _defaultGripMargin;
-            }
-        }
-    }
+    protected virtual Padding DefaultGripMargin =>
+        _toolStripGrip is not null ? _toolStripGrip.DefaultMargin : _defaultGripMargin;
 
-    protected virtual bool DefaultShowItemToolTips
-    {
-        get
-        {
-            return true;
-        }
-    }
+    protected virtual bool DefaultShowItemToolTips => true;
 
     [Browsable(false)]
     [SRDescription(nameof(SR.ToolStripDefaultDropDownDirectionDescr))]
@@ -692,8 +663,7 @@ public partial class ToolStrip : ScrollableControl, IArrangedElement, ISupportTo
     }
 
     /// <summary>
-    ///  Returns an owner window that can be used to
-    ///  own a drop down.
+    ///  Returns an owner window that can be used to own a drop down.
     /// </summary>
     internal virtual NativeWindow DropDownOwnerWindow
     {
@@ -1587,17 +1557,11 @@ public partial class ToolStrip : ScrollableControl, IArrangedElement, ISupportTo
 
             // check the type of the currently set renderer.
             // types are cached as this may be called frequently.
-            if (_currentRendererType == ToolStripManager.s_professionalRendererType)
-            {
-                return ToolStripRenderMode.Professional;
-            }
-
-            if (_currentRendererType == ToolStripManager.s_systemRendererType)
-            {
-                return ToolStripRenderMode.System;
-            }
-
-            return ToolStripRenderMode.Custom;
+            return _currentRendererType == ToolStripManager.s_professionalRendererType
+                ? ToolStripRenderMode.Professional
+                : _currentRendererType == ToolStripManager.s_systemRendererType
+                    ? ToolStripRenderMode.System
+                    : ToolStripRenderMode.Custom;
         }
         set
         {
@@ -1809,22 +1773,10 @@ public partial class ToolStrip : ScrollableControl, IArrangedElement, ISupportTo
         _ => null,
     };
 
-    protected internal virtual ToolStripItem CreateDefaultItem(string? text, Image? image, EventHandler? onClick)
-    {
-        if (text == "-")
-        {
-            return new ToolStripSeparator();
-        }
-        else
-        {
-            return new ToolStripButton(text, image, onClick);
-        }
-    }
+    protected internal virtual ToolStripItem CreateDefaultItem(string? text, Image? image, EventHandler? onClick) =>
+        text == "-" ? new ToolStripSeparator() : new ToolStripButton(text, image, onClick);
 
-    private void ClearAllSelections()
-    {
-        ClearAllSelectionsExcept(null);
-    }
+    private void ClearAllSelections() => ClearAllSelectionsExcept(null);
 
     private void ClearAllSelectionsExcept(ToolStripItem? item)
     {
@@ -2597,27 +2549,11 @@ public partial class ToolStrip : ScrollableControl, IArrangedElement, ISupportTo
         }
     }
 
-    protected override bool IsInputKey(Keys keyData)
-    {
-        ToolStripItem? item = GetSelectedItem();
-        if (item is not null && item.IsInputKey(keyData))
-        {
-            return true;
-        }
+    protected override bool IsInputKey(Keys keyData) =>
+        (GetSelectedItem() is { } item && item.IsInputKey(keyData)) || base.IsInputKey(keyData);
 
-        return base.IsInputKey(keyData);
-    }
-
-    protected override bool IsInputChar(char charCode)
-    {
-        ToolStripItem? item = GetSelectedItem();
-        if (item is not null && item.IsInputChar(charCode))
-        {
-            return true;
-        }
-
-        return base.IsInputChar(charCode);
-    }
+    protected override bool IsInputChar(char charCode) =>
+        (GetSelectedItem() is { } item && item.IsInputChar(charCode)) || base.IsInputChar(charCode);
 
     private static bool IsPseudoMnemonic(char charCode, string text)
     {
@@ -2718,9 +2654,9 @@ public partial class ToolStrip : ScrollableControl, IArrangedElement, ISupportTo
         using DeviceContextHdcScope imageHdc = new(g, applyGraphicsState: false);
 
         // Send the actual wm_print message
-        PInvoke.SendMessage(
+        PInvokeCore.SendMessage(
             this,
-            PInvoke.WM_PRINT,
+            PInvokeCore.WM_PRINT,
             (WPARAM)imageHdc,
             (LPARAM)(uint)(PInvoke.PRF_CHILDREN | PInvoke.PRF_CLIENT | PInvoke.PRF_ERASEBKGND | PInvoke.PRF_NONCLIENT));
 
@@ -2778,22 +2714,13 @@ public partial class ToolStrip : ScrollableControl, IArrangedElement, ISupportTo
             bool isControlTab =
                 (keyData & Keys.Control) == Keys.Control && (keyData & Keys.KeyCode) == Keys.Tab;
 
-            if (isControlTab && !TabStop && HasKeyboardInput)
+            if (isControlTab
+                && !TabStop
+                && HasKeyboardInput
+                && ToolStripManager.SelectNextToolStrip(this, forward: (keyData & Keys.Shift) == Keys.None))
             {
-                bool handled = false;
-                if ((keyData & Keys.Shift) == Keys.None)
-                {
-                    handled = ToolStripManager.SelectNextToolStrip(this, forward: true);
-                }
-                else
-                {
-                    handled = ToolStripManager.SelectNextToolStrip(this, forward: false);
-                }
-
-                if (handled)
-                {
-                    return true;
-                }
+                // Handled
+                return true;
             }
         }
 
@@ -2875,12 +2802,7 @@ public partial class ToolStrip : ScrollableControl, IArrangedElement, ISupportTo
                 break;
         }
 
-        if (retVal)
-        {
-            return retVal;
-        }
-
-        return base.ProcessDialogKey(keyData);
+        return retVal ? retVal : base.ProcessDialogKey(keyData);
     }
 
     internal virtual void ProcessDuplicateMnemonic(ToolStripItem item, char charCode)
@@ -3608,6 +3530,7 @@ public partial class ToolStrip : ScrollableControl, IArrangedElement, ISupportTo
                             // the cached HDC isn't big enough for this item. make it bigger.
                             _largestDisplayedItemSize = itemSize;
                             bitmapSize = itemSize;
+
                             // dispose the old graphics - create a new, bigger one.
                             itemGraphics.Dispose();
 
@@ -3660,7 +3583,7 @@ public partial class ToolStrip : ScrollableControl, IArrangedElement, ISupportTo
             }
             finally
             {
-                itemGraphics?.Dispose();
+                itemGraphics.Dispose();
             }
         }
 
@@ -4325,7 +4248,9 @@ public partial class ToolStrip : ScrollableControl, IArrangedElement, ISupportTo
 
             // For splitstack layout we re-arrange the items in the displayed items
             // collection so that we can easily tab through them in natural order
-            Rectangle displayRect = DisplayRectangle;
+
+            // We've historically called this virtual, still need to for compat.
+            _ = DisplayRectangle;
             int lastRightAlignedItem = -1;
 
             for (int pass = 0; pass < 2; pass++)
@@ -4563,35 +4488,32 @@ public partial class ToolStrip : ScrollableControl, IArrangedElement, ISupportTo
     /// </param>
     internal void UpdateToolTip(ToolStripItem? item, bool refresh = false)
     {
-        if (ShowItemToolTips)
+        if (!ShowItemToolTips || (item == _currentlyActiveTooltipItem && !refresh) || ToolTip is null)
         {
-            if ((item != _currentlyActiveTooltipItem || refresh) && ToolTip is not null)
+            return;
+        }
+
+        if (item != _currentlyActiveTooltipItem)
+        {
+            ToolTip.Hide(this);
+            if (!refresh)
             {
-                if (item != _currentlyActiveTooltipItem)
-                {
-                    ToolTip.Hide(this);
-                    if(!refresh)
-                        _currentlyActiveTooltipItem = item;
-                }
-
-                if (_currentlyActiveTooltipItem is not null && !GetToolStripState(STATE_DRAGGING))
-                {
-                    Cursor? currentCursor = Cursor.Current;
-
-                    if (currentCursor is not null)
-                    {
-                        Point cursorLocation = Cursor.Position;
-                        cursorLocation.Y += Cursor.Size.Height - currentCursor.HotSpot.Y;
-
-                        cursorLocation = WindowsFormsUtils.ConstrainToScreenBounds(new Rectangle(cursorLocation, s_onePixel)).Location;
-
-                        ToolTip.Show(_currentlyActiveTooltipItem.ToolTipText,
-                                    this,
-                                    PointToClient(cursorLocation),
-                                    ToolTip.AutoPopDelay);
-                    }
-                }
+                _currentlyActiveTooltipItem = item;
             }
+        }
+
+        if (_currentlyActiveTooltipItem is not null && !GetToolStripState(STATE_DRAGGING) && Cursor.Current is { } currentCursor)
+        {
+            Point cursorLocation = Cursor.Position;
+            cursorLocation.Y += Cursor.Size.Height - currentCursor.HotSpot.Y;
+
+            cursorLocation = WindowsFormsUtils.ConstrainToScreenBounds(new Rectangle(cursorLocation, s_onePixel)).Location;
+
+            ToolTip.Show(
+                _currentlyActiveTooltipItem.ToolTipText,
+                this,
+                PointToClient(cursorLocation),
+                ToolTip.AutoPopDelay);
         }
     }
 
@@ -4646,24 +4568,19 @@ public partial class ToolStrip : ScrollableControl, IArrangedElement, ISupportTo
     {
         if (newOrientation != Orientation)
         {
-            // snap our last dimensions before switching over.
-            // use specifed bounds so that if something is docked or anchored we don't take the extra stretching
-            // effects into account.
-            Size size = CommonProperties.GetSpecifiedBounds(this).Size;
             Orientation = newOrientation;
-            // since the Grip affects the DisplayRectangle, we need to re-adjust the size
             SetupGrip();
         }
     }
 
     protected override void WndProc(ref Message m)
     {
-        if (m.MsgInternal == PInvoke.WM_SETFOCUS)
+        if (m.MsgInternal == PInvokeCore.WM_SETFOCUS)
         {
             SnapFocus((HWND)(nint)m.WParamInternal);
         }
 
-        if (!AllowClickThrough && m.MsgInternal == PInvoke.WM_MOUSEACTIVATE)
+        if (!AllowClickThrough && m.MsgInternal == PInvokeCore.WM_MOUSEACTIVATE)
         {
             // We want to prevent taking focus if someone clicks on the toolstrip dropdown itself. The mouse message
             // will still go through, but focus won't be taken. If someone clicks on a child control (ComboBox,
@@ -4713,12 +4630,12 @@ public partial class ToolStrip : ScrollableControl, IArrangedElement, ISupportTo
 
         base.WndProc(ref m);
 
-        if (AllowClickThrough && m.MsgInternal == PInvoke.WM_MOUSEACTIVATE && m.ResultInternal == PInvoke.MA_ACTIVATEANDEAT)
+        if (AllowClickThrough && m.MsgInternal == PInvokeCore.WM_MOUSEACTIVATE && m.ResultInternal == PInvoke.MA_ACTIVATEANDEAT)
         {
             m.ResultInternal = (LRESULT)(nint)PInvoke.MA_ACTIVATE;
         }
 
-        if (m.Msg == (int)PInvoke.WM_NCDESTROY)
+        if (m.Msg == (int)PInvokeCore.WM_NCDESTROY)
         {
             // Destroy the owner window, if we created one. We
             // cannot do this in OnHandleDestroyed, because at

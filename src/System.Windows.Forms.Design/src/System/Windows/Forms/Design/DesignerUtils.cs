@@ -25,13 +25,13 @@ internal static class DesignerUtils
         new(HatchStyle.Percent50, SystemColors.ControlDarkDark, SystemColors.ControlDarkDark);
     // Pens and Brushes used via GDI to render our grabhandles
     private static HBRUSH s_grabHandleFillBrushPrimary =
-        PInvoke.CreateSolidBrush((COLORREF)(uint)ColorTranslator.ToWin32(SystemColors.Window));
+        PInvokeCore.CreateSolidBrush((COLORREF)(uint)ColorTranslator.ToWin32(SystemColors.Window));
     private static HBRUSH s_grabHandleFillBrush =
-        PInvoke.CreateSolidBrush((COLORREF)(uint)ColorTranslator.ToWin32(SystemColors.ControlText));
+        PInvokeCore.CreateSolidBrush((COLORREF)(uint)ColorTranslator.ToWin32(SystemColors.ControlText));
     private static HPEN s_grabHandlePenPrimary =
-        PInvoke.CreatePen(PEN_STYLE.PS_SOLID, cWidth: 1, (COLORREF)(uint)ColorTranslator.ToWin32(SystemColors.ControlText));
+        PInvokeCore.CreatePen(PEN_STYLE.PS_SOLID, cWidth: 1, (COLORREF)(uint)ColorTranslator.ToWin32(SystemColors.ControlText));
     private static HPEN s_grabHandlePen =
-        PInvoke.CreatePen(PEN_STYLE.PS_SOLID, cWidth: 1, (COLORREF)(uint)ColorTranslator.ToWin32(SystemColors.Window));
+        PInvokeCore.CreatePen(PEN_STYLE.PS_SOLID, cWidth: 1, (COLORREF)(uint)ColorTranslator.ToWin32(SystemColors.Window));
 
     // The box-like image used as the user is dragging comps from the toolbox
     private static Bitmap? s_boxImage;
@@ -170,16 +170,16 @@ internal static class DesignerUtils
         s_selectionBorderBrush = new HatchBrush(HatchStyle.Percent50, SystemColors.ControlDarkDark, SystemColors.ControlDarkDark);
 
         PInvokeCore.DeleteObject(s_grabHandleFillBrushPrimary);
-        s_grabHandleFillBrushPrimary = PInvoke.CreateSolidBrush((COLORREF)(uint)ColorTranslator.ToWin32(SystemColors.Window));
+        s_grabHandleFillBrushPrimary = PInvokeCore.CreateSolidBrush((COLORREF)(uint)ColorTranslator.ToWin32(SystemColors.Window));
 
         PInvokeCore.DeleteObject(s_grabHandleFillBrush);
-        s_grabHandleFillBrush = PInvoke.CreateSolidBrush((COLORREF)(uint)ColorTranslator.ToWin32(SystemColors.ControlText));
+        s_grabHandleFillBrush = PInvokeCore.CreateSolidBrush((COLORREF)(uint)ColorTranslator.ToWin32(SystemColors.ControlText));
 
         PInvokeCore.DeleteObject(s_grabHandlePenPrimary);
-        s_grabHandlePenPrimary = PInvoke.CreatePen(PEN_STYLE.PS_SOLID, cWidth: 1, (COLORREF)(uint)ColorTranslator.ToWin32(SystemColors.ControlText));
+        s_grabHandlePenPrimary = PInvokeCore.CreatePen(PEN_STYLE.PS_SOLID, cWidth: 1, (COLORREF)(uint)ColorTranslator.ToWin32(SystemColors.ControlText));
 
         PInvokeCore.DeleteObject(s_grabHandlePen);
-        s_grabHandlePen = PInvoke.CreatePen(PEN_STYLE.PS_SOLID, cWidth: 1, (COLORREF)(uint)ColorTranslator.ToWin32(SystemColors.Window));
+        s_grabHandlePen = PInvokeCore.CreatePen(PEN_STYLE.PS_SOLID, cWidth: 1, (COLORREF)(uint)ColorTranslator.ToWin32(SystemColors.Window));
     }
 
     /// <summary>
@@ -290,7 +290,7 @@ internal static class DesignerUtils
             height: 2);
 
         // Lower rect - its fillbrush depends on the primary selection
-        PInvoke.SelectObject(hDC, isPrimary ? s_grabHandleFillBrushPrimary : s_grabHandleFillBrush);
+        PInvokeCore.SelectObject(hDC, isPrimary ? s_grabHandleFillBrushPrimary : s_grabHandleFillBrush);
         PInvoke.Rectangle(hDC, bounds.Left, bounds.Top + s_lockedHandleLowerOffset, bounds.Right, bounds.Bottom);
     }
 
@@ -374,12 +374,9 @@ internal static class DesignerUtils
             return prop?.GetValue(null);
         }
 
-        if (provider.TryGetService(out IDesignerOptionService? optionService))
-        {
-            return optionService.GetOptionValue("WindowsFormsDesigner\\General", name);
-        }
-
-        return null;
+        return provider.TryGetService(out IDesignerOptionService? optionService)
+            ? optionService.GetOptionValue("WindowsFormsDesigner\\General", name)
+            : null;
     }
 
     /// <summary>
@@ -443,21 +440,16 @@ internal static class DesignerUtils
         using (Graphics g = Graphics.FromImage(image))
         {
             IntPtr hDc = g.GetHdc();
-            PInvoke.SendMessage(
+            PInvokeCore.SendMessage(
                 control,
-                PInvoke.WM_PRINT,
+                PInvokeCore.WM_PRINT,
                 (WPARAM)hDc,
                 (LPARAM)(uint)(PInvoke.PRF_CHILDREN | PInvoke.PRF_CLIENT | PInvoke.PRF_ERASEBKGND | PInvoke.PRF_NONCLIENT));
             g.ReleaseHdc(hDc);
         }
 
         // Now check to see if our center pixel was cleared, if not then our WM_PRINT failed
-        if (image.GetPixel(image.Width / 2, image.Height / 2).Equals(testColor))
-        {
-            return false;
-        }
-
-        return true;
+        return !image.GetPixel(image.Width / 2, image.Height / 2).Equals(testColor);
     }
 
     /// <summary>
@@ -730,17 +722,8 @@ internal static class DesignerUtils
     ///  Ensures that a SplitterPanel in a SplitContainer returns the same container as other form components,
     ///  since SplitContainer sites its two SplitterPanels inside a nested container.
     /// </summary>
-    public static IContainer? CheckForNestedContainer(IContainer? container)
-    {
-        if (container is NestedContainer nestedContainer)
-        {
-            return nestedContainer.Owner.Site?.Container;
-        }
-        else
-        {
-            return container;
-        }
-    }
+    public static IContainer? CheckForNestedContainer(IContainer? container) =>
+        container is NestedContainer nestedContainer ? (nestedContainer.Owner.Site?.Container) : container;
 
     /// <summary>
     ///  Used to create copies of the objects that we are dragging in a drag operation
@@ -836,7 +819,7 @@ internal static class DesignerUtils
     private static int ScaleLogicalToDeviceUnitsX(int unit) => ScaleHelper.ScaleToInitialSystemDpi(unit);
 
     private static uint TreeView_GetExtendedStyle(HWND handle)
-        => (uint)PInvoke.SendMessage(handle, PInvoke.TVM_GETEXTENDEDSTYLE);
+        => (uint)PInvokeCore.SendMessage(handle, PInvoke.TVM_GETEXTENDEDSTYLE);
 
     /// <summary>
     ///  Modify a WinForms TreeView control to use the new Explorer style theme
@@ -852,7 +835,7 @@ internal static class DesignerUtils
         PInvoke.SetWindowTheme(hwnd, "Explorer", pszSubIdList: null);
         uint exstyle = TreeView_GetExtendedStyle(hwnd);
         exstyle |= PInvoke.TVS_EX_DOUBLEBUFFER | PInvoke.TVS_EX_FADEINOUTEXPANDOS;
-        PInvoke.SendMessage(treeView, PInvoke.TVM_SETEXTENDEDSTYLE, 0, (nint)exstyle);
+        PInvokeCore.SendMessage(treeView, PInvoke.TVM_SETEXTENDEDSTYLE, 0, (nint)exstyle);
     }
 
     /// <summary>
@@ -865,7 +848,7 @@ internal static class DesignerUtils
 
         HWND hwnd = (HWND)listView.Handle;
         PInvoke.SetWindowTheme(hwnd, "Explorer", null);
-        PInvoke.SendMessage(
+        PInvokeCore.SendMessage(
             listView,
             PInvoke.LVM_SETEXTENDEDLISTVIEWSTYLE,
             (WPARAM)PInvoke.LVS_EX_DOUBLEBUFFER,

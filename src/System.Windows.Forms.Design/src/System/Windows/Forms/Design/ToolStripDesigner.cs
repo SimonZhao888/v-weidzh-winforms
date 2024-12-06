@@ -523,10 +523,7 @@ internal class ToolStripDesigner : ControlDesigner
                 component = _host.CreateComponent(t);
                 designer = _host.GetDesigner(component) as ToolStripItemDesigner;
                 designer.InternalCreate = true;
-                if (designer is ComponentDesigner)
-                {
-                    designer.InitializeNewComponent(null);
-                }
+                designer?.InitializeNewComponent(null);
             }
             finally
             {
@@ -586,10 +583,7 @@ internal class ToolStripDesigner : ControlDesigner
                     designer.InternalCreate = true;
                 }
 
-                if (designer is ComponentDesigner)
-                {
-                    designer.InitializeNewComponent(null);
-                }
+                designer?.InitializeNewComponent(null);
             }
             finally
             {
@@ -788,7 +782,6 @@ internal class ToolStripDesigner : ControlDesigner
                         if (dropDown is not null)
                         {
                             ToolStripItem ownerItem = dropDown.OwnerItem;
-                            ToolStripMenuItemDesigner itemDesigner = (ToolStripMenuItemDesigner)_host.GetDesigner(ownerItem);
                             ToolStripDropDown topmost = ToolStripItemDesigner.GetFirstDropDown((ToolStripDropDownItem)(ownerItem));
                             ToolStripItem topMostItem = (topmost is null) ? ownerItem : topmost.OwnerItem;
 
@@ -1623,14 +1616,7 @@ internal class ToolStripDesigner : ControlDesigner
             // walk back up the chain of windows to get the topmost
             while (topmost is not null and not ToolStripOverflow)
             {
-                if (topmost.OwnerItem is not null)
-                {
-                    topmost = topmost.OwnerItem.GetCurrentParent() as ToolStripDropDown;
-                }
-                else
-                {
-                    topmost = null;
-                }
+                topmost = topmost?.OwnerItem.GetCurrentParent() as ToolStripDropDown;
             }
         }
 
@@ -1723,14 +1709,9 @@ internal class ToolStripDesigner : ControlDesigner
                     if (char.IsLower(c) != char.IsLower(defaultName[0]))
                     {
                         // match up the first char of the generated identifier with the case of the default.
-                        if (char.IsLower(c))
-                        {
-                            c = char.ToUpper(c, CultureInfo.CurrentCulture);
-                        }
-                        else
-                        {
-                            c = char.ToLower(c, CultureInfo.CurrentCulture);
-                        }
+                        c = char.IsLower(c)
+                            ? char.ToUpper(c, CultureInfo.CurrentCulture)
+                            : char.ToLower(c, CultureInfo.CurrentCulture);
                     }
                 }
 
@@ -2403,12 +2384,12 @@ internal class ToolStripDesigner : ControlDesigner
                     }
                 }
 
-                // REQUIRED FOR THE REFRESH OF GLYPHS BUT TRY TO BE SMART ABOUT THE REGION TO INVALIDATE....
-                if (SelectionService.PrimarySelection is not ToolStripItem selectedItem)
+                // Required for the refresh of glyphs.
+                if (SelectionService.PrimarySelection is not ToolStripItem)
                 {
                     if (KeyboardHandlingService is not null)
                     {
-                        selectedItem = KeyboardHandlingService.SelectedDesignerControl as ToolStripItem;
+                        _ = KeyboardHandlingService.SelectedDesignerControl;
                     }
                 }
 
@@ -2529,7 +2510,7 @@ internal class ToolStripDesigner : ControlDesigner
     {
         switch (m.MsgInternal)
         {
-            case PInvoke.WM_CONTEXTMENU:
+            case PInvokeCore.WM_CONTEXTMENU:
                 if (GetHitTest(PARAM.ToPoint(m.LParamInternal)))
                 {
                     return;
@@ -2537,8 +2518,8 @@ internal class ToolStripDesigner : ControlDesigner
 
                 base.WndProc(ref m);
                 break;
-            case PInvoke.WM_LBUTTONDOWN:
-            case PInvoke.WM_RBUTTONDOWN:
+            case PInvokeCore.WM_LBUTTONDOWN:
+            case PInvokeCore.WM_RBUTTONDOWN:
                 // commit any InSitu if any...
                 Commit();
                 base.WndProc(ref m);

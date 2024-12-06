@@ -313,7 +313,7 @@ public partial class ListView
                     // in Tile view our ListView uses the column header collection to update the Tile Information
                     for (int colIdx = _owner._columnHeaders.Length - 1; colIdx >= 0; colIdx--)
                     {
-                        int w = _owner._columnHeaders[colIdx].Width; // Update width before detaching from ListView
+                        _ = _owner._columnHeaders[colIdx].Width; // Update width before detaching from ListView
                         _owner._columnHeaders[colIdx].OwnerListview = null;
                         _owner._columnHeaders[colIdx].ReleaseUiaProvider();
                     }
@@ -328,10 +328,10 @@ public partial class ListView
                 {
                     for (int colIdx = _owner._columnHeaders.Length - 1; colIdx >= 0; colIdx--)
                     {
-                        int w = _owner._columnHeaders[colIdx].Width; // Update width before detaching from ListView
+                        _ = _owner._columnHeaders[colIdx].Width; // Update width before detaching from ListView
                         if (_owner.IsHandleCreated)
                         {
-                            PInvoke.SendMessage(_owner, PInvoke.LVM_DELETECOLUMN, (WPARAM)colIdx);
+                            PInvokeCore.SendMessage(_owner, PInvoke.LVM_DELETECOLUMN, (WPARAM)colIdx);
                         }
 
                         _owner._columnHeaders[colIdx].OwnerListview = null;
@@ -499,12 +499,12 @@ public partial class ListView
         {
             ColumnHeader columnHeader = _owner.GetColumnHeader(index);
 
-            int w = columnHeader.Width; // Update width before detaching from ListView
+            _ = columnHeader.Width; // Update width before detaching from ListView
 
             // in Tile view our ListView uses the column header collection to update the Tile Information
             if (_owner.IsHandleCreated && _owner.View != View.Tile)
             {
-                int retval = (int)PInvoke.SendMessage(_owner, PInvoke.LVM_DELETECOLUMN, (WPARAM)index);
+                int retval = (int)PInvokeCore.SendMessage(_owner, PInvoke.LVM_DELETECOLUMN, (WPARAM)index);
                 if (retval == 0)
                 {
                     throw new ArgumentOutOfRangeException(nameof(index), index, string.Format(SR.InvalidArgument, nameof(index), index));

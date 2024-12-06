@@ -162,23 +162,6 @@ public abstract unsafe partial class AxHost : Control, ISupportInitialize, ICust
 
     private Dictionary<PROPCAT, CategoryAttribute>? _objectDefinedCategoryNames;
 
-#if DEBUG
-    static AxHost()
-    {
-        Debug.Assert(DockStyle.None == NativeMethods.ActiveX.ALIGN_NO_CHANGE, "align value mismatch");
-        Debug.Assert((int)DockStyle.Top == NativeMethods.ActiveX.ALIGN_TOP, "align value mismatch");
-        Debug.Assert((int)DockStyle.Bottom == NativeMethods.ActiveX.ALIGN_BOTTOM, "align value mismatch");
-        Debug.Assert((int)DockStyle.Left == NativeMethods.ActiveX.ALIGN_LEFT, "align value mismatch");
-        Debug.Assert((int)DockStyle.Right == NativeMethods.ActiveX.ALIGN_RIGHT, "align value mismatch");
-        Debug.Assert((int)MouseButtons.Left == 0x00100000, "mb.left mismatch");
-        Debug.Assert((int)MouseButtons.Right == 0x00200000, "mb.right mismatch");
-        Debug.Assert((int)MouseButtons.Middle == 0x00400000, "mb.middle mismatch");
-        Debug.Assert((int)Keys.Shift == 0x00010000, "key.shift mismatch");
-        Debug.Assert((int)Keys.Control == 0x00020000, "key.control mismatch");
-        Debug.Assert((int)Keys.Alt == 0x00040000, "key.alt mismatch");
-    }
-#endif
-
     /// <summary>
     ///  Creates a new instance of a control which wraps an activeX control given by the
     ///  clsid parameter and flags of 0.
@@ -1269,7 +1252,7 @@ public abstract unsafe partial class AxHost : Control, ISupportInitialize, ICust
             return true;
         }
 
-        if ((int)PInvoke.SendMessage(this, _subclassCheckMessage) == REGMSG_RETVAL)
+        if ((int)PInvokeCore.SendMessage(this, _subclassCheckMessage) == REGMSG_RETVAL)
         {
             _wndprocAddr = currentWndproc;
             return true;
@@ -1698,7 +1681,7 @@ public abstract unsafe partial class AxHost : Control, ISupportInitialize, ICust
             return base.PreProcessMessage(ref msg);
         }
 
-        MSG win32Message = msg;
+        MSG win32Message = msg.ToMSG();
         _axState[s_siteProcessedInputKey] = false;
         try
         {
@@ -1774,7 +1757,7 @@ public abstract unsafe partial class AxHost : Control, ISupportInitialize, ICust
             // We don't have a message so we must create one ourselves.
             // The message we are creating is a WM_SYSKEYDOWN with the right alt key setting.
             hwnd = (ContainingControl is null) ? HWND.Null : ContainingControl.HWND,
-            message = PInvoke.WM_SYSKEYDOWN,
+            message = PInvokeCore.WM_SYSKEYDOWN,
             wParam = (WPARAM)char.ToUpper(charCode, CultureInfo.CurrentCulture),
             // 0x20180001
             lParam = LPARAM.MAKELPARAM(
@@ -1865,19 +1848,10 @@ public abstract unsafe partial class AxHost : Control, ISupportInitialize, ICust
             }
 
             _ocxState = value;
+            _axState[s_manualUpdate] = _ocxState.ManualUpdate;
+            _licenseKey = _ocxState.LicenseKey;
 
-            if (_ocxState is not null)
-            {
-                _axState[s_manualUpdate] = _ocxState.ManualUpdate;
-                _licenseKey = _ocxState.LicenseKey;
-            }
-            else
-            {
-                _axState[s_manualUpdate] = false;
-                _licenseKey = null;
-            }
-
-            if (_ocxState is not null && GetOcState() >= OC_RUNNING)
+            if (GetOcState() >= OC_RUNNING)
             {
                 DepersistControl();
             }
@@ -1918,8 +1892,11 @@ public abstract unsafe partial class AxHost : Control, ISupportInitialize, ICust
 
                     return new State(ms, _storageType, this);
                 case StorageType.Storage:
-                    Debug.Assert(oldOcxState is not null, "we got to have an old state which holds out scribble storage...");
-                    if (oldOcxState is not null)
+                    if (oldOcxState is null)
+                    {
+                        Debug.Fail("we got to have an old state which holds out scribble storage...");
+                    }
+                    else
                     {
                         using var persistStorage = ComHelpers.GetComScope<IPersistStorage>(_instance);
                         return oldOcxState.RefreshStorage(persistStorage);
@@ -2368,7 +2345,7 @@ public abstract unsafe partial class AxHost : Control, ISupportInitialize, ICust
             return null;
         }
 
-        PROPCAT propcat = 0;
+        PROPCAT propcat;
         hr = categorizeProperties.Value->MapPropertyToCategory(dispid, &propcat);
         if (!hr.Succeeded || propcat == 0)
         {
@@ -2515,17 +2492,7 @@ public abstract unsafe partial class AxHost : Control, ISupportInitialize, ICust
             return null;
         }
 
-        if (_editor is not null)
-        {
-            return _editor;
-        }
-
-        if (_editor is null && HasPropertyPages())
-        {
-            _editor = new AxComponentEditor();
-        }
-
-        return _editor;
+        return _editor ??= HasPropertyPages() ? new AxComponentEditor() : null;
     }
 
     [EditorBrowsable(EditorBrowsableState.Advanced)]
@@ -2630,7 +2597,6 @@ public abstract unsafe partial class AxHost : Control, ISupportInitialize, ICust
                 }
 
                 string propName = baseProps[i].Name;
-                PropertyDescriptor? prop = null;
 
                 _propertyInfos.TryGetValue(propName, out PropertyInfo? propInfo);
 
@@ -2642,6 +2608,7 @@ public abstract unsafe partial class AxHost : Control, ISupportInitialize, ICust
 
                 if (!_properties.TryGetValue(propName, out PropertyDescriptor? propDesc))
                 {
+                    PropertyDescriptor? prop;
                     if (propInfo is not null)
                     {
                         prop = new AxPropertyDescriptor(baseProps[i], this);
@@ -3105,27 +3072,27 @@ public abstract unsafe partial class AxHost : Control, ISupportInitialize, ICust
         switch (m.MsgInternal)
         {
             // Things we explicitly ignore and pass to the ActiveX Control's windproc
-            case PInvoke.WM_ERASEBKGND:
+            case PInvokeCore.WM_ERASEBKGND:
             case MessageId.WM_REFLECT_NOTIFYFORMAT:
-            case PInvoke.WM_SETCURSOR:
-            case PInvoke.WM_SYSCOLORCHANGE:
+            case PInvokeCore.WM_SETCURSOR:
+            case PInvokeCore.WM_SYSCOLORCHANGE:
 
             // Some of the common controls respond to this message to do some custom painting.
             // So, we should just pass this message through.
-            case PInvoke.WM_DRAWITEM:
+            case PInvokeCore.WM_DRAWITEM:
 
-            case PInvoke.WM_LBUTTONDBLCLK:
-            case PInvoke.WM_LBUTTONUP:
-            case PInvoke.WM_MBUTTONDBLCLK:
-            case PInvoke.WM_MBUTTONUP:
-            case PInvoke.WM_RBUTTONDBLCLK:
-            case PInvoke.WM_RBUTTONUP:
+            case PInvokeCore.WM_LBUTTONDBLCLK:
+            case PInvokeCore.WM_LBUTTONUP:
+            case PInvokeCore.WM_MBUTTONDBLCLK:
+            case PInvokeCore.WM_MBUTTONUP:
+            case PInvokeCore.WM_RBUTTONDBLCLK:
+            case PInvokeCore.WM_RBUTTONUP:
                 DefWndProc(ref m);
                 break;
 
-            case PInvoke.WM_LBUTTONDOWN:
-            case PInvoke.WM_MBUTTONDOWN:
-            case PInvoke.WM_RBUTTONDOWN:
+            case PInvokeCore.WM_LBUTTONDOWN:
+            case PInvokeCore.WM_MBUTTONDOWN:
+            case PInvokeCore.WM_RBUTTONDOWN:
                 if (IsUserMode())
                 {
                     Focus();
@@ -3134,7 +3101,7 @@ public abstract unsafe partial class AxHost : Control, ISupportInitialize, ICust
                 DefWndProc(ref m);
                 break;
 
-            case PInvoke.WM_KILLFOCUS:
+            case PInvokeCore.WM_KILLFOCUS:
                 {
                     _hwndFocus = (HWND)(nint)m.WParamInternal;
                     try
@@ -3149,7 +3116,7 @@ public abstract unsafe partial class AxHost : Control, ISupportInitialize, ICust
                     break;
                 }
 
-            case PInvoke.WM_COMMAND:
+            case PInvokeCore.WM_COMMAND:
                 if (!ReflectMessage(m.LParamInternal, ref m))
                 {
                     DefWndProc(ref m);
@@ -3157,11 +3124,11 @@ public abstract unsafe partial class AxHost : Control, ISupportInitialize, ICust
 
                 break;
 
-            case PInvoke.WM_CONTEXTMENU:
+            case PInvokeCore.WM_CONTEXTMENU:
                 DefWndProc(ref m);
                 break;
 
-            case PInvoke.WM_DESTROY:
+            case PInvokeCore.WM_DESTROY:
                 // If we are currently in a state of InPlaceActive or above, we should first reparent the ActiveX
                 // control to our parking window before we transition to a state below InPlaceActive. Otherwise we
                 // face all sorts of problems when we try to transition back to a state >= InPlaceActive.
@@ -3186,13 +3153,13 @@ public abstract unsafe partial class AxHost : Control, ISupportInitialize, ICust
                 }
 
                 break;
-            case PInvoke.WM_HELP:
+            case PInvokeCore.WM_HELP:
                 // We want to both fire the event, and let the ActiveX Control have the message.
                 base.WndProc(ref m);
                 DefWndProc(ref m);
                 break;
 
-            case PInvoke.WM_KEYUP:
+            case PInvokeCore.WM_KEYUP:
                 // Pass WM_KEYUP messages to PreProcessControlMessage, which comes back to our PreProcessMessage
                 // to give the ActiveX control a chance to handle accelerator keys (command shortcuts).
 
@@ -3216,7 +3183,7 @@ public abstract unsafe partial class AxHost : Control, ISupportInitialize, ICust
 
                 break;
 
-            case PInvoke.WM_NCDESTROY:
+            case PInvokeCore.WM_NCDESTROY:
                 // Need to detach it now.
                 DetachAndForward(ref m);
                 break;
@@ -3236,11 +3203,12 @@ public abstract unsafe partial class AxHost : Control, ISupportInitialize, ICust
 
     private unsafe void DetachAndForward(ref Message m)
     {
+        bool isHandleCreated = IsHandleCreated;
         DetachWindow();
-        if (IsHandleCreated)
+        if (isHandleCreated)
         {
             void* wndProc = (void*)PInvokeCore.GetWindowLong(this, WINDOW_LONG_PTR_INDEX.GWL_WNDPROC);
-            m.ResultInternal = PInvoke.CallWindowProc(
+            m.ResultInternal = PInvokeCore.CallWindowProc(
                 (delegate* unmanaged[Stdcall]<HWND, uint, WPARAM, LPARAM, LRESULT>)wndProc,
                 HWND,
                 (uint)m.Msg,

@@ -7,6 +7,7 @@
       SYSLIB5005: System.Formats.Nrbf is experimental
     -->
     <NoWarn>$(NoWarn);SYSLIB5005</NoWarn>
+    <IsTestUtilityProject>true</IsTestUtilityProject>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Common\tests\TestUtilities\System.Windows.Forms.Common.TestUtilities.csproj" />
+    <ProjectReference Include="..\..\..\Common\tests\TestUtilities\System.Private.Windows.Core.TestUtilities.csproj" />
     <ProjectReference Include="..\..\..\System.Windows.Forms\src\System.Windows.Forms.csproj" />
     <ProjectReference Include="..\..\src\System.Windows.Forms.Primitives.csproj" />
   </ItemGroup>

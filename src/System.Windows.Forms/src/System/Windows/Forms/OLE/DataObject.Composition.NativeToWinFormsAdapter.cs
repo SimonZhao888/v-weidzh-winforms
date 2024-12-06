@@ -111,8 +111,10 @@ public unsafe partial class DataObject
 
                 static object ReadObjectFromHGLOBAL(HGLOBAL hglobal, bool restrictDeserialization)
                 {
-                    MemoryStream stream = ReadByteStreamFromHGLOBAL(hglobal, out bool isSerializedObject);
-                    return !isSerializedObject ? stream : BinaryFormatUtilities.ReadObjectFromStream(stream, restrictDeserialization);
+                     MemoryStream stream = ReadByteStreamFromHGLOBAL(hglobal, out bool isSerializedObject);
+                     return !isSerializedObject
+                         ? stream
+                         : BinaryFormatUtilities.ReadObjectFromStream(stream, restrictDeserialization);
                 }
             }
 
@@ -132,7 +134,7 @@ public unsafe partial class DataObject
                     int index = 0;
 
                     // The object here can either be a stream or a serialized object. We identify a serialized object
-                    // by writing the bytes for the guid serializedObjectID at the front of the stream.
+                    // by writing the bytes for the GUID serializedObjectID at the front of the stream.
 
                     if (isSerializedObject = bytes.AsSpan().StartsWith(s_serializedObjectID))
                     {
@@ -186,7 +188,7 @@ public unsafe partial class DataObject
                     return null;
                 }
 
-                Span<char> fileName = stackalloc char[PInvoke.MAX_PATH + 1];
+                Span<char> fileName = stackalloc char[(int)PInvokeCore.MAX_PATH + 1];
                 string[] files = new string[count];
 
                 fixed (char* buffer = fileName)
@@ -392,8 +394,7 @@ public unsafe partial class DataObject
             }
 
             #region IDataObject
-
-            object? IDataObject.GetData(string format, bool autoConvert)
+            public object? GetData(string format, bool autoConvert)
             {
                 using var nativeDataObject = _nativeDataObject.GetInterface();
                 object? data = GetObjectFromDataObject(nativeDataObject, format, out bool doNotContinue);
@@ -429,11 +430,11 @@ public unsafe partial class DataObject
                 return originalData ?? data;
             }
 
-            object? IDataObject.GetData(string format) => ((IDataObject)this).GetData(format, autoConvert: true);
+            public object? GetData(string format) => GetData(format, autoConvert: true);
 
-            object? IDataObject.GetData(Type format) => ((IDataObject)this).GetData(format.FullName!);
+            public object? GetData(Type format) => GetData(format.FullName!);
 
-            bool IDataObject.GetDataPresent(Type format) => GetDataPresent(format.FullName!);
+            public bool GetDataPresent(Type format) => GetDataPresent(format.FullName!);
 
             public bool GetDataPresent(string format, bool autoConvert)
             {
@@ -501,11 +502,10 @@ public unsafe partial class DataObject
 
             public string[] GetFormats() => GetFormats(autoConvert: true);
 
-            void IDataObject.SetData(string format, bool autoConvert, object? data) { }
-            void IDataObject.SetData(string format, object? data) { }
-            void IDataObject.SetData(Type format, object? data) { }
-            void IDataObject.SetData(object? data) { }
-
+            public void SetData(string format, bool autoConvert, object? data) { }
+            public void SetData(string format, object? data) { }
+            public void SetData(Type format, object? data) { }
+            public void SetData(object? data) { }
             #endregion
 
             private bool GetDataPresentInner(string format)

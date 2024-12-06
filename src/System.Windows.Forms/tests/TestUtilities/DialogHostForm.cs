@@ -3,6 +3,7 @@
 
 using System.ComponentModel;
 using System.Windows.Forms;
+using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.UI.WindowsAndMessaging;
 
@@ -17,7 +18,7 @@ internal class DialogHostForm : Form
 {
     protected override void WndProc(ref Message m)
     {
-        if (m.MsgInternal == PInvoke.WM_ENTERIDLE && m.WParamInternal == (uint)MSGF.DIALOGBOX)
+        if (m.MsgInternal == PInvokeCore.WM_ENTERIDLE && m.WParamInternal == (uint)MSGF.DIALOGBOX)
         {
             OnDialogIdle((HWND)m.LParamInternal);
         }
@@ -27,11 +28,11 @@ internal class DialogHostForm : Form
 
     protected virtual void OnDialogIdle(HWND dialogHandle)
     {
-        PInvoke.PostMessage(dialogHandle, PInvoke.WM_CLOSE);
+        PInvokeCore.PostMessage(dialogHandle, PInvokeCore.WM_CLOSE);
     }
 
     protected static unsafe void Accept(HWND handle)
     {
-        PInvoke.SendMessage(handle, PInvoke.WM_COMMAND, (WPARAM)(nint)MESSAGEBOX_RESULT.IDOK);
+        PInvokeCore.SendMessage(handle, PInvokeCore.WM_COMMAND, (WPARAM)(nint)MESSAGEBOX_RESULT.IDOK);
     }
 }

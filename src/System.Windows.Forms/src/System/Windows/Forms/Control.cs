@@ -569,14 +569,7 @@ public unsafe partial class Control :
                 return ambientProperties;
             }
 
-            if (Site is not null)
-            {
-                ambientProperties = Site.GetService<AmbientProperties>();
-            }
-            else
-            {
-                ambientProperties = GetService<AmbientProperties>();
-            }
+            ambientProperties = Site is not null ? Site.GetService<AmbientProperties>() : GetService<AmbientProperties>();
 
             if (ambientProperties is not null)
             {
@@ -703,12 +696,12 @@ public unsafe partial class Control :
 
             if (color.IsSystemColor)
             {
-                backBrush = PInvoke.GetSysColorBrush(color);
+                backBrush = PInvokeCore.GetSysColorBrush(color);
                 SetState(States.OwnCtlBrush, false);
             }
             else
             {
-                backBrush = PInvoke.CreateSolidBrush((COLORREF)(uint)ColorTranslator.ToWin32(color));
+                backBrush = PInvokeCore.CreateSolidBrush((COLORREF)(uint)ColorTranslator.ToWin32(color));
                 SetState(States.OwnCtlBrush, true);
             }
 
@@ -809,14 +802,7 @@ public unsafe partial class Control :
                 }
             }
 
-            if (!c.IsEmpty && IsValidBackColor(c))
-            {
-                return c;
-            }
-            else
-            {
-                return DefaultBackColor;
-            }
+            return !c.IsEmpty && IsValidBackColor(c) ? c : DefaultBackColor;
         }
         set
         {
@@ -1460,7 +1446,7 @@ public unsafe partial class Control :
     /// </summary>
     internal uint CreateThreadId => IsHandleCreated
         ? PInvoke.GetWindowThreadProcessId(this, out _)
-        : PInvoke.GetCurrentThreadId();
+        : PInvokeCore.GetCurrentThreadId();
 
     /// <summary>
     ///  Retrieves the cursor that will be displayed when the mouse is over this
@@ -1486,24 +1472,9 @@ public unsafe partial class Control :
 
             // We only do ambients for things with "Cursors.Default" as their default.
             Cursor localDefault = DefaultCursor;
-            if (localDefault != Cursors.Default)
-            {
-                return localDefault;
-            }
-
-            Control? parent = ParentInternal;
-            if (parent is not null)
-            {
-                return parent.Cursor;
-            }
-
-            AmbientProperties? ambient = AmbientPropertiesService;
-            if (ambient is not null && ambient.Cursor is not null)
-            {
-                return ambient.Cursor;
-            }
-
-            return localDefault;
+            return localDefault != Cursors.Default
+                ? localDefault
+                : ParentInternal is { } parent ? parent.Cursor : AmbientPropertiesService?.Cursor ?? localDefault;
         }
         set
         {
@@ -1520,10 +1491,10 @@ public unsafe partial class Control :
                 // We want to instantly change the cursor if the mouse is within our bounds.
                 // This includes the case where the mouse is over one of our children.
                 PInvoke.GetCursorPos(out Point p);
-                PInvoke.GetWindowRect(this, out RECT r);
+                PInvokeCore.GetWindowRect(this, out RECT r);
                 if ((r.left <= p.X && p.X < r.right && r.top <= p.Y && p.Y < r.bottom) || PInvoke.GetCapture() == HWND)
                 {
-                    PInvoke.SendMessage(this, PInvoke.WM_SETCURSOR, (WPARAM)HWND, (LPARAM)(int)PInvoke.HTCLIENT);
+                    PInvokeCore.SendMessage(this, PInvokeCore.WM_SETCURSOR, (WPARAM)HWND, (LPARAM)(int)PInvoke.HTCLIENT);
                 }
             }
 
@@ -1780,18 +1751,7 @@ public unsafe partial class Control :
         get
         {
             // We are only enabled if our parent is enabled
-            if (!GetState(States.Enabled))
-            {
-                return false;
-            }
-            else if (ParentInternal is null)
-            {
-                return true;
-            }
-            else
-            {
-                return ParentInternal.Enabled;
-            }
+            return GetState(States.Enabled) && (ParentInternal is null || ParentInternal.Enabled);
         }
         set
         {
@@ -2278,7 +2238,7 @@ public unsafe partial class Control :
                 }
             }
 
-            PInvoke.GetWindowRect(this, out var temp);
+            PInvokeCore.GetWindowRect(this, out var temp);
             using Region working = new(temp);
 
             HWND prev;
@@ -2289,7 +2249,7 @@ public unsafe partial class Control :
                 !(next = PInvoke.GetWindow(prev, GET_WINDOW_CMD.GW_HWNDPREV)).IsNull;
                 prev = next)
             {
-                PInvoke.GetWindowRect(next, out temp);
+                PInvokeCore.GetWindowRect(next, out temp);
                 if (PInvoke.IsWindowVisible(next))
                 {
                     working.Exclude(temp);
@@ -2348,7 +2308,7 @@ public unsafe partial class Control :
                 control = marshalingControl;
             }
 
-            return PInvoke.GetWindowThreadProcessId(control, out _) != PInvoke.GetCurrentThreadId();
+            return PInvoke.GetWindowThreadProcessId(control, out _) != PInvokeCore.GetCurrentThreadId();
         }
     }
 
@@ -2428,15 +2388,7 @@ public unsafe partial class Control :
     /// <summary>
     ///  Used to tell if this BackColor is Supported
     /// </summary>
-    private bool IsValidBackColor(Color c)
-    {
-        if (!c.IsEmpty && !GetStyle(ControlStyles.SupportsTransparentBackColor) && c.A < 255)
-        {
-            return false;
-        }
-
-        return true;
-    }
+    private bool IsValidBackColor(Color c) => c.IsEmpty || GetStyle(ControlStyles.SupportsTransparentBackColor) || c.A == 255;
 
     /// <summary>
     ///  Stores information about the last button or combination pressed by the user.
@@ -2839,15 +2791,9 @@ public unsafe partial class Control :
     /// </summary>
     internal BoundsSpecified RequiredScaling
     {
-        get
-        {
-            if ((_requiredScaling & RequiredScalingEnabledMask) != 0)
-            {
-                return (BoundsSpecified)(_requiredScaling & RequiredScalingMask);
-            }
-
-            return BoundsSpecified.None;
-        }
+        get => (_requiredScaling & RequiredScalingEnabledMask) != 0
+            ? (BoundsSpecified)(_requiredScaling & RequiredScalingMask)
+            : BoundsSpecified.None;
         set
         {
             byte enableBit = (byte)(_requiredScaling & RequiredScalingEnabledMask);
@@ -3332,9 +3278,9 @@ public unsafe partial class Control :
 
                     // The side effect of this initial state is that adding new controls may clear the accelerator
                     // state (has been this way forever)
-                    PInvoke.SendMessage(
+                    PInvokeCore.SendMessage(
                         TopMostParent,
-                        PInvoke.WM_CHANGEUISTATE,
+                        PInvokeCore.WM_CHANGEUISTATE,
                         (WPARAM)(actionMask | PInvoke.UIS_SET));
                 }
             }
@@ -3379,8 +3325,8 @@ public unsafe partial class Control :
 
                     // The side effect of this initial state is that adding new controls may clear the focus cue state
                     // state (has been this way forever)
-                    PInvoke.SendMessage(TopMostParent,
-                        PInvoke.WM_CHANGEUISTATE,
+                    PInvokeCore.SendMessage(TopMostParent,
+                        PInvokeCore.WM_CHANGEUISTATE,
                         (WPARAM)(actionMask | (int)PInvoke.UIS_SET));
                 }
             }
@@ -3635,7 +3581,7 @@ public unsafe partial class Control :
             }
 
             using var scope = MultithreadSafeCallScope.Create();
-            return PInvoke.GetWindowText(this);
+            return PInvokeCore.GetWindowText(this);
         }
         set
         {
@@ -4347,7 +4293,7 @@ public unsafe partial class Control :
 
         if (_updateCount == 0)
         {
-            PInvoke.SendMessage(this, PInvoke.WM_SETREDRAW, (WPARAM)(BOOL)false);
+            PInvokeCore.SendMessage(this, PInvokeCore.WM_SETREDRAW, (WPARAM)(BOOL)false);
         }
 
         _updateCount++;
@@ -4377,20 +4323,8 @@ public unsafe partial class Control :
     ///  all controls in the parent chain can do it too, but since the semantics for this function can be overridden,
     ///  we need to call the method on the parent 'recursively' (not exactly since it is not necessarily the same method).
     /// </summary>
-    internal virtual bool CanProcessMnemonic()
-    {
-        if (!Enabled || !Visible)
-        {
-            return false;
-        }
-
-        if (_parent is not null)
-        {
-            return _parent.CanProcessMnemonic();
-        }
-
-        return true;
-    }
+    internal virtual bool CanProcessMnemonic() =>
+        Enabled && Visible && (_parent is null || _parent.CanProcessMnemonic());
 
     // Package scope to allow AxHost to override
     internal virtual bool CanSelectCore()
@@ -4694,7 +4628,7 @@ public unsafe partial class Control :
                 if (s_threadCallbackMessage != 0)
                 {
                     MSG msg = default;
-                    BOOL result = PInvoke.PeekMessage(
+                    BOOL result = PInvokeCore.PeekMessage(
                         &msg,
                         this,
                         (uint)s_threadCallbackMessage,
@@ -4732,7 +4666,7 @@ public unsafe partial class Control :
         if (((WINDOW_EX_STYLE)PInvokeCore.GetWindowLong(_window, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE))
             .HasFlag(WINDOW_EX_STYLE.WS_EX_MDICHILD))
         {
-            PInvoke.DefMDIChildProc(InternalHandle, PInvoke.WM_CLOSE, default, default);
+            PInvoke.DefMDIChildProc(InternalHandle, PInvokeCore.WM_CLOSE, default, default);
         }
         else
         {
@@ -4758,6 +4692,12 @@ public unsafe partial class Control :
 
                 Properties.RemoveValue(s_backBrushProperty);
             }
+        }
+
+        // Unsubscribes from the Disposed event of the ContextMenuStrip.
+        if (ContextMenuStrip is ContextMenuStrip menu)
+        {
+            menu.Disposed -= DetachContextMenuStrip;
         }
 
         ReflectParent = null;
@@ -4940,9 +4880,9 @@ public unsafe partial class Control :
         using DeviceContextHdcScope hDc = new(g, applyGraphicsState: false);
 
         // Send the WM_PRINT message.
-        PInvoke.SendMessage(
+        PInvokeCore.SendMessage(
             this,
-            PInvoke.WM_PRINT,
+            PInvokeCore.WM_PRINT,
             (WPARAM)hDc,
             (LPARAM)(PInvoke.PRF_CHILDREN | PInvoke.PRF_CLIENT | PInvoke.PRF_ERASEBKGND | PInvoke.PRF_NONCLIENT));
 
@@ -4983,7 +4923,7 @@ public unsafe partial class Control :
         if (!asyncResult.IsCompleted)
         {
             Control marshaler = FindMarshalingControl();
-            if (PInvoke.GetWindowThreadProcessId(marshaler, out _) == PInvoke.GetCurrentThreadId())
+            if (PInvoke.GetWindowThreadProcessId(marshaler, out _) == PInvokeCore.GetCurrentThreadId())
             {
                 marshaler.InvokeMarshaledCallbacks();
             }
@@ -4995,18 +4935,10 @@ public unsafe partial class Control :
         }
 
         Debug.Assert(asyncResult.IsCompleted, "Why isn't this asyncResult done yet?");
-        if (entry._exception is not null)
-        {
-            throw entry._exception;
-        }
-
-        return entry._retVal;
+        return entry._exception is not null ? throw entry._exception : entry._retVal;
     }
 
-    internal bool EndUpdateInternal()
-    {
-        return EndUpdateInternal(true);
-    }
+    internal bool EndUpdateInternal() => EndUpdateInternal(invalidate: true);
 
     internal bool EndUpdateInternal(bool invalidate)
     {
@@ -5016,7 +4948,7 @@ public unsafe partial class Control :
             _updateCount--;
             if (_updateCount == 0)
             {
-                PInvoke.SendMessage(this, PInvoke.WM_SETREDRAW, (WPARAM)(BOOL)true);
+                PInvokeCore.SendMessage(this, PInvokeCore.WM_SETREDRAW, (WPARAM)(BOOL)true);
                 if (invalidate)
                 {
                     Invalidate();
@@ -5267,13 +5199,8 @@ public unsafe partial class Control :
     /// </summary>
     public IContainerControl? GetContainerControl()
     {
-        Control? c = this;
-
         // Refer to IsContainerControl property for more details.
-        if (c is not null && IsContainerControl)
-        {
-            c = c.ParentInternal;
-        }
+        Control? c = IsContainerControl ? ParentInternal : this;
 
         while (c is not null && !IsFocusManagingContainerControl(c))
         {
@@ -5694,15 +5621,10 @@ public unsafe partial class Control :
                     }
                     else
                     {
-                        // If we don't found any siblings, and the control is a ToolStripItem that hosts a control itself,
+                        // If we haven't found any siblings, and the control is a ToolStripItem that hosts a control itself,
                         // then we shouldn't return its parent, because it would be the same ToolStrip we're currently at.
-                        // Instead, we should return the control that is previous to the current ToolStrip
-                        if (ctl.ToolStripControlHost is not null)
-                        {
-                            return GetNextControl(ctl._parent, forward: false);
-                        }
-
-                        return parent;
+                        // Instead, we should return the control that is previous to the current ToolStrip.
+                        return ctl.ToolStripControlHost is not null ? GetNextControl(ctl._parent, forward: false) : parent;
                     }
                 }
             }
@@ -5742,14 +5664,9 @@ public unsafe partial class Control :
         else
         {
             HWND hwnd = (HWND)window.Handle;
-            if (hwnd.IsNull || PInvoke.IsWindow(hwnd))
-            {
-                return new(window, hwnd);
-            }
-            else
-            {
-                throw new Win32Exception((int)WIN32_ERROR.ERROR_INVALID_HANDLE);
-            }
+            return hwnd.IsNull || PInvoke.IsWindow(hwnd)
+                ? new(window, hwnd)
+                : throw new Win32Exception((int)WIN32_ERROR.ERROR_INVALID_HANDLE);
         }
     }
 
@@ -5823,8 +5740,8 @@ public unsafe partial class Control :
         // NOTE: this message may not have originally been sent to this HWND.
         if (!GetStyle(ControlStyles.UserPaint))
         {
-            PInvoke.SetTextColor(dc, (COLORREF)(uint)ColorTranslator.ToWin32(ForeColor));
-            PInvoke.SetBkColor(dc, (COLORREF)(uint)ColorTranslator.ToWin32(BackColor));
+            PInvokeCore.SetTextColor(dc, (COLORREF)(uint)ColorTranslator.ToWin32(ForeColor));
+            PInvokeCore.SetBkColor(dc, (COLORREF)(uint)ColorTranslator.ToWin32(BackColor));
             return BackColorBrush;
         }
 
@@ -6200,14 +6117,7 @@ public unsafe partial class Control :
             {
                 lock (_threadCallbackList)
                 {
-                    if (_threadCallbackList.Count > 0)
-                    {
-                        current = _threadCallbackList.Dequeue();
-                    }
-                    else
-                    {
-                        current = null;
-                    }
+                    current = _threadCallbackList.Count > 0 ? _threadCallbackList.Dequeue() : null;
                 }
             }
         }
@@ -6263,12 +6173,7 @@ public unsafe partial class Control :
             // and off when the key is untoggled.
 
             // Toggle keys (only low bit is of interest).
-            if (keyVal is Keys.Insert or Keys.CapsLock)
-            {
-                return (result & 0x1) != 0x0;
-            }
-
-            return (result & 0x8001) != 0x0;
+            return keyVal is Keys.Insert or Keys.CapsLock ? (result & 0x1) != 0x0 : (result & 0x8001) != 0x0;
         }
 
         // else - it's an un-lockable key.
@@ -6292,17 +6197,11 @@ public unsafe partial class Control :
     /// </returns>
     protected virtual bool IsInputChar(char charCode)
     {
-        int mask;
-        if (charCode == (char)(int)Keys.Tab)
-        {
-            mask = (int)(PInvoke.DLGC_WANTCHARS | PInvoke.DLGC_WANTALLKEYS | PInvoke.DLGC_WANTTAB);
-        }
-        else
-        {
-            mask = (int)(PInvoke.DLGC_WANTCHARS | PInvoke.DLGC_WANTALLKEYS);
-        }
+        int mask = charCode == (char)(int)Keys.Tab
+            ? (int)(PInvoke.DLGC_WANTCHARS | PInvoke.DLGC_WANTALLKEYS | PInvoke.DLGC_WANTTAB)
+            : (int)(PInvoke.DLGC_WANTCHARS | PInvoke.DLGC_WANTALLKEYS);
 
-        return ((int)PInvoke.SendMessage(this, PInvoke.WM_GETDLGCODE) & mask) != 0;
+        return ((int)PInvokeCore.SendMessage(this, PInvokeCore.WM_GETDLGCODE) & mask) != 0;
     }
 
     /// <summary>
@@ -6340,7 +6239,7 @@ public unsafe partial class Control :
         }
 
         return IsHandleCreated
-            && ((uint)PInvoke.SendMessage(this, PInvoke.WM_GETDLGCODE) & mask) != 0;
+            && ((uint)PInvokeCore.SendMessage(this, PInvokeCore.WM_GETDLGCODE) & mask) != 0;
     }
 
     /// <summary>
@@ -6468,7 +6367,7 @@ public unsafe partial class Control :
 
         // We don't want to wait if we're on the same thread, or else we'll deadlock.
         // It is important that syncSameThread always be false for asynchronous calls.
-        bool syncSameThread = synchronous && PInvoke.GetWindowThreadProcessId(this, out _) == PInvoke.GetCurrentThreadId();
+        bool syncSameThread = synchronous && PInvoke.GetWindowThreadProcessId(this, out _) == PInvokeCore.GetCurrentThreadId();
 
         // Store the compressed stack information from the thread that is calling the Invoke()
         // so we can assign the same security context to the thread that will actually execute
@@ -6494,7 +6393,7 @@ public unsafe partial class Control :
 
         lock (_threadCallbackList)
         {
-            if (s_threadCallbackMessage == PInvoke.WM_NULL)
+            if (s_threadCallbackMessage == PInvokeCore.WM_NULL)
             {
                 s_threadCallbackMessage = PInvoke.RegisterWindowMessage($"{Application.WindowMessagesVersion}_ThreadCallbackMessage");
             }
@@ -6508,7 +6407,7 @@ public unsafe partial class Control :
         }
         else
         {
-            PInvoke.PostMessage(this, s_threadCallbackMessage);
+            PInvokeCore.PostMessage(this, s_threadCallbackMessage);
         }
 
         if (synchronous)
@@ -7155,7 +7054,7 @@ public unsafe partial class Control :
                 uint flags = PInvoke.PRF_CHILDREN | PInvoke.PRF_CLIENT | PInvoke.PRF_ERASEBKGND | PInvoke.PRF_NONCLIENT;
 
                 using DeviceContextHdcScope hdc = new(e);
-                Message m = Message.Create(HWND, PInvoke.WM_PRINTCLIENT, (WPARAM)hdc, (LPARAM)flags);
+                Message m = Message.Create(HWND, PInvokeCore.WM_PRINTCLIENT, (WPARAM)hdc, (LPARAM)flags);
                 DefWndProc(ref m);
             }
             else
@@ -7391,7 +7290,7 @@ public unsafe partial class Control :
             // to the same state as when the message was placed.
             if (GetState(States.ThreadMarshalPending))
             {
-                PInvoke.PostMessage(this, s_threadCallbackMessage);
+                PInvokeCore.PostMessage(this, s_threadCallbackMessage);
                 SetState(States.ThreadMarshalPending, false);
             }
         }
@@ -7461,7 +7360,7 @@ public unsafe partial class Control :
             if (PInvoke.GetScrollInfo(this, SCROLLBAR_CONSTANTS.SB_HORZ, ref si))
             {
                 si.nPos = (RightToLeft == RightToLeft.Yes) ? si.nMax : si.nMin;
-                PInvoke.SendMessage(this, PInvoke.WM_HSCROLL, WPARAM.MAKEWPARAM((int)SCROLLBAR_COMMAND.SB_THUMBPOSITION, si.nPos));
+                PInvokeCore.SendMessage(this, PInvokeCore.WM_HSCROLL, WPARAM.MAKEWPARAM((int)SCROLLBAR_COMMAND.SB_THUMBPOSITION, si.nPos));
             }
         }
     }
@@ -8564,7 +8463,7 @@ public unsafe partial class Control :
     /// </summary>
     public Point PointToClient(Point p)
     {
-        PInvoke.MapWindowPoints((HWND)default, this, ref p);
+        PInvokeCore.MapWindowPoints((HWND)default, this, ref p);
         return p;
     }
 
@@ -8573,7 +8472,7 @@ public unsafe partial class Control :
     /// </summary>
     public Point PointToScreen(Point p)
     {
-        PInvoke.MapWindowPoints(this, (HWND)default, ref p);
+        PInvokeCore.MapWindowPoints(this, (HWND)default, ref p);
         return p;
     }
 
@@ -8619,7 +8518,7 @@ public unsafe partial class Control :
     {
         bool result;
 
-        if (msg.MsgInternal == PInvoke.WM_KEYDOWN || msg.MsgInternal == PInvoke.WM_SYSKEYDOWN)
+        if (msg.MsgInternal == PInvokeCore.WM_KEYDOWN || msg.MsgInternal == PInvokeCore.WM_SYSKEYDOWN)
         {
             if (!GetExtendedState(ExtendedStates.UiCues))
             {
@@ -8641,9 +8540,9 @@ public unsafe partial class Control :
                 result = ProcessDialogKey(keyData);
             }
         }
-        else if (msg.MsgInternal == PInvoke.WM_CHAR || msg.MsgInternal == PInvoke.WM_SYSCHAR)
+        else if (msg.MsgInternal == PInvokeCore.WM_CHAR || msg.MsgInternal == PInvokeCore.WM_SYSCHAR)
         {
-            if (msg.MsgInternal == PInvoke.WM_CHAR && IsInputChar((char)(nint)msg.WParamInternal))
+            if (msg.MsgInternal == PInvokeCore.WM_CHAR && IsInputChar((char)(nint)msg.WParamInternal))
             {
                 SetExtendedState(ExtendedStates.InputChar, true);
                 result = false;
@@ -8697,7 +8596,7 @@ public unsafe partial class Control :
             Keys keyData = (Keys)(nint)message.WParamInternal | ModifierKeys;
 
             // Allow control to preview key down message.
-            if (message.Msg is ((int)PInvoke.WM_KEYDOWN) or ((int)PInvoke.WM_SYSKEYDOWN))
+            if (message.Msg is ((int)PInvokeCore.WM_KEYDOWN) or ((int)PInvokeCore.WM_SYSKEYDOWN))
             {
                 target.ProcessUICues(ref message);
 
@@ -8715,7 +8614,7 @@ public unsafe partial class Control :
 
             if (!target.PreProcessMessage(ref message))
             {
-                if (message.MsgInternal == PInvoke.WM_KEYDOWN || message.MsgInternal == PInvoke.WM_SYSKEYDOWN)
+                if (message.MsgInternal == PInvokeCore.WM_KEYDOWN || message.MsgInternal == PInvokeCore.WM_SYSKEYDOWN)
                 {
                     // Check if IsInputKey has already processed this message
                     // or if it is safe to call - we only want it to be called once.
@@ -8724,7 +8623,7 @@ public unsafe partial class Control :
                         state = PreProcessControlState.MessageNeeded;
                     }
                 }
-                else if (message.MsgInternal == PInvoke.WM_CHAR || message.MsgInternal == PInvoke.WM_SYSCHAR)
+                else if (message.MsgInternal == PInvokeCore.WM_CHAR || message.MsgInternal == PInvokeCore.WM_SYSCHAR)
                 {
                     // Check if IsInputChar has already processed this message
                     // or if it is safe to call - we only want it to be called once.
@@ -8810,7 +8709,7 @@ public unsafe partial class Control :
         PrintToMetaFile_SendPrintMessage(hDC, (nint)(lParam & (long)~PInvoke.PRF_CLIENT));
 
         // Figure out mapping for the client area.
-        bool success = PInvoke.GetWindowRect(this, out var windowRect);
+        bool success = PInvokeCore.GetWindowRect(this, out var windowRect);
         Debug.Assert(success, "GetWindowRect() failed.");
         Point clientOffset = PointToScreen(Point.Empty);
         clientOffset = new(clientOffset.X - windowRect.left, clientOffset.Y - windowRect.top);
@@ -8838,7 +8737,7 @@ public unsafe partial class Control :
         if (GetStyle(ControlStyles.UserPaint))
         {
             // We let user paint controls paint directly into the metafile
-            PInvoke.SendMessage(this, PInvoke.WM_PRINT, (WPARAM)hDC, (LPARAM)lParam);
+            PInvokeCore.SendMessage(this, PInvokeCore.WM_PRINT, (WPARAM)hDC, (LPARAM)lParam);
         }
         else
         {
@@ -8855,7 +8754,7 @@ public unsafe partial class Control :
             // which is then copied into the metafile. (Old GDI line drawing
             // is 1px thin, which causes borders to disappear, etc.)
             using MetafileDCWrapper dcWrapper = new(hDC, Size);
-            PInvoke.SendMessage(this, PInvoke.WM_PRINT, (WPARAM)dcWrapper.HDC, (LPARAM)lParam);
+            PInvokeCore.SendMessage(this, PInvokeCore.WM_PRINT, (WPARAM)dcWrapper.HDC, (LPARAM)lParam);
         }
     }
 
@@ -8905,7 +8804,7 @@ public unsafe partial class Control :
         KeyPressEventArgs? kpe = null;
         WPARAM newWParam = 0;
 
-        if (m.MsgInternal == PInvoke.WM_CHAR || m.MsgInternal == PInvoke.WM_SYSCHAR)
+        if (m.MsgInternal == PInvokeCore.WM_CHAR || m.MsgInternal == PInvokeCore.WM_SYSCHAR)
         {
             int charsToIgnore = ImeWmCharsToIgnore;
 
@@ -8922,7 +8821,7 @@ public unsafe partial class Control :
                 newWParam = kpe.KeyChar;
             }
         }
-        else if (m.MsgInternal == PInvoke.WM_IME_CHAR)
+        else if (m.MsgInternal == PInvokeCore.WM_IME_CHAR)
         {
             int charsToIgnore = ImeWmCharsToIgnore;
 
@@ -8935,19 +8834,12 @@ public unsafe partial class Control :
             OnKeyPress(kpe);
 
             // If the character wasn't changed, just use the original value rather than round tripping.
-            if (kpe.KeyChar == preEventCharacter)
-            {
-                newWParam = m.WParamInternal;
-            }
-            else
-            {
-                newWParam = (WPARAM)kpe.KeyChar;
-            }
+            newWParam = kpe.KeyChar == preEventCharacter ? m.WParamInternal : (WPARAM)kpe.KeyChar;
         }
         else
         {
             ke = new KeyEventArgs((Keys)(int)m.WParamInternal | ModifierKeys);
-            if (m.MsgInternal == PInvoke.WM_KEYDOWN || m.MsgInternal == PInvoke.WM_SYSKEYDOWN)
+            if (m.MsgInternal == PInvokeCore.WM_KEYDOWN || m.MsgInternal == PInvokeCore.WM_SYSKEYDOWN)
             {
                 OnKeyDown(ke);
             }
@@ -8966,9 +8858,9 @@ public unsafe partial class Control :
         {
             if (ke!.SuppressKeyPress)
             {
-                RemovePendingMessages(PInvoke.WM_CHAR, PInvoke.WM_CHAR);
-                RemovePendingMessages(PInvoke.WM_SYSCHAR, PInvoke.WM_SYSCHAR);
-                RemovePendingMessages(PInvoke.WM_IME_CHAR, PInvoke.WM_IME_CHAR);
+                RemovePendingMessages(PInvokeCore.WM_CHAR, PInvokeCore.WM_CHAR);
+                RemovePendingMessages(PInvokeCore.WM_SYSCHAR, PInvokeCore.WM_SYSCHAR);
+                RemovePendingMessages(PInvokeCore.WM_IME_CHAR, PInvokeCore.WM_IME_CHAR);
             }
 
             return ke.Handled;
@@ -8988,15 +8880,8 @@ public unsafe partial class Control :
     ///   <see cref="Message.Msg"/> property are WM_CHAR, WM_KEYDOWN, WM_SYSKEYDOWN, WM_KEYUP, and WM_SYSKEYUP.
     ///  </para>
     /// </remarks>
-    protected internal virtual bool ProcessKeyMessage(ref Message m)
-    {
-        if (_parent is not null && _parent.ProcessKeyPreview(ref m))
-        {
-            return true;
-        }
-
-        return ProcessKeyEventArgs(ref m);
-    }
+    protected internal virtual bool ProcessKeyMessage(ref Message m) =>
+        (_parent is not null && _parent.ProcessKeyPreview(ref m)) || ProcessKeyEventArgs(ref m);
 
     /// <summary>
     ///  Previews a keyboard message.
@@ -9043,14 +8928,14 @@ public unsafe partial class Control :
         }
 
         Control? topMostParent = null;
-        uint current = (uint)PInvoke.SendMessage(this, PInvoke.WM_QUERYUISTATE);
+        uint current = (uint)PInvokeCore.SendMessage(this, PInvokeCore.WM_QUERYUISTATE);
 
         // don't trust when a control says the accelerators are showing.
         // make sure the topmost parent agrees with this as we could be in a mismatched state.
         if (current == 0 /*accelerator and focus cues are showing*/)
         {
             topMostParent = TopMostParent;
-            current = (uint)PInvoke.SendMessage(topMostParent, PInvoke.WM_QUERYUISTATE);
+            current = (uint)PInvokeCore.SendMessage(topMostParent, PInvokeCore.WM_QUERYUISTATE);
         }
 
         uint toClear = 0;
@@ -9094,9 +8979,9 @@ public unsafe partial class Control :
             //       Then we've got to send a WM_CHANGEUISTATE to the topmost managed control (which will be toplevel)
             //       According to MSDN, WM_CHANGEUISTATE will generate WM_UPDATEUISTATE messages for all immediate children (via DefWndProc)
             //           (we're in charge here, we've got to change the state of the root window)
-            PInvoke.SendMessage(
+            PInvokeCore.SendMessage(
                 topMostParent,
-                PInvoke.GetParent(topMostParent).IsNull ? PInvoke.WM_CHANGEUISTATE : PInvoke.WM_UPDATEUISTATE,
+                PInvoke.GetParent(topMostParent).IsNull ? PInvokeCore.WM_CHANGEUISTATE : PInvokeCore.WM_UPDATEUISTATE,
                 (WPARAM)((int)PInvoke.UIS_CLEAR | ((int)toClear << 16)));
         }
     }
@@ -9126,7 +9011,7 @@ public unsafe partial class Control :
         if (!IsDisposed)
         {
             MSG msg = default;
-            while (PInvoke.PeekMessage(&msg, this, (uint)msgMin, (uint)msgMax, PEEK_MESSAGE_REMOVE_TYPE.PM_REMOVE))
+            while (PInvokeCore.PeekMessage(&msg, this, (uint)msgMin, (uint)msgMax, PEEK_MESSAGE_REMOVE_TYPE.PM_REMOVE))
             {
                 // No-op.
             }
@@ -9366,7 +9251,7 @@ public unsafe partial class Control :
     public Rectangle RectangleToClient(Rectangle r)
     {
         RECT rect = r;
-        PInvoke.MapWindowPoints(HWND.Null, this, ref rect);
+        PInvokeCore.MapWindowPoints(HWND.Null, this, ref rect);
         return rect;
     }
 
@@ -9376,7 +9261,7 @@ public unsafe partial class Control :
     public Rectangle RectangleToScreen(Rectangle r)
     {
         RECT rect = r;
-        PInvoke.MapWindowPoints(this, HWND.Null, ref rect);
+        PInvokeCore.MapWindowPoints(this, HWND.Null, ref rect);
         return rect;
     }
 
@@ -9394,7 +9279,7 @@ public unsafe partial class Control :
             return false;
         }
 
-        m.ResultInternal = PInvoke.SendMessage(
+        m.ResultInternal = PInvokeCore.SendMessage(
             control,
             MessageId.WM_REFLECT | m.MsgInternal,
             m.WParamInternal,
@@ -9779,32 +9664,22 @@ public unsafe partial class Control :
         Size minSize = MinimumSize;
         Size maxSize = MaximumSize;
 
-        // clear out min and max size, otherwise this could affect the scaling logic.
+        // Clear out min and max size, otherwise this could affect the scaling logic.
         MinimumSize = Size.Empty;
         MaximumSize = Size.Empty;
 
-        // this is raw because Min/Max size have been cleared at this point.
+        // This is raw because Min/Max size have been cleared at this point.
         Rectangle rawScaledBounds = GetScaledBounds(Bounds, factor, specified);
 
         //
         // Scale Padding and Margin
         //
+
         float dx = factor.Width;
         float dy = factor.Height;
 
         Padding padding = Padding;
         Padding margins = Margin;
-
-        // Clear off specified bits for 1.0 scaling factors
-        if (dx == 1.0F)
-        {
-            specified &= ~(BoundsSpecified.X | BoundsSpecified.Width);
-        }
-
-        if (dy == 1.0F)
-        {
-            specified &= ~(BoundsSpecified.Y | BoundsSpecified.Height);
-        }
 
         if (dx != 1.0F)
         {
@@ -9837,17 +9712,19 @@ public unsafe partial class Control :
         if (!minSize.IsEmpty)
         {
             minSize -= adornmentSize;
-            minSize = ScaleSize(LayoutUtils.UnionSizes(Size.Empty, minSize), // make sure we don't go below 0.
-                                    factor.Width,
-                                    factor.Height) + adornmentSize;
+            minSize = ScaleSize(
+                LayoutUtils.UnionSizes(Size.Empty, minSize), // make sure we don't go below 0.
+                factor.Width,
+                factor.Height) + adornmentSize;
         }
 
         if (!maxSize.IsEmpty)
         {
             maxSize -= adornmentSize;
-            maxSize = ScaleSize(LayoutUtils.UnionSizes(Size.Empty, maxSize), // make sure we don't go below 0.
-                                    factor.Width,
-                                    factor.Height) + adornmentSize;
+            maxSize = ScaleSize(
+                LayoutUtils.UnionSizes(Size.Empty, maxSize), // make sure we don't go below 0.
+                factor.Width,
+                factor.Height) + adornmentSize;
         }
 
         // Apply the min/max size constraints - don't call ApplySizeConstraints
@@ -10685,7 +10562,7 @@ public unsafe partial class Control :
         return align;
     }
 
-    private void SetWindowFont() => PInvoke.SendMessage(this, PInvoke.WM_SETFONT, (WPARAM)FontHandle, (LPARAM)(BOOL)false);
+    private void SetWindowFont() => PInvokeCore.SendMessage(this, PInvokeCore.WM_SETFONT, (WPARAM)FontHandle, (LPARAM)(BOOL)false);
 
     private void SetWindowStyle(int flag, bool value)
     {
@@ -10834,10 +10711,10 @@ public unsafe partial class Control :
             PInvokeCore.GetClientRect(this, out rect);
             clientWidth = rect.right;
             clientHeight = rect.bottom;
-            PInvoke.GetWindowRect(this, out rect);
+            PInvokeCore.GetWindowRect(this, out rect);
             if (!GetTopLevel())
             {
-                PInvoke.MapWindowPoints(HWND.Null, PInvoke.GetParent(this), ref rect);
+                PInvokeCore.MapWindowPoints(HWND.Null, PInvoke.GetParent(this), ref rect);
             }
         }
 
@@ -11127,7 +11004,7 @@ public unsafe partial class Control :
 
             if (!lastParentHandle.IsNull)
             {
-                PInvoke.PostMessage(lastParentHandle, PInvoke.WM_CLOSE);
+                PInvokeCore.PostMessage(lastParentHandle, PInvokeCore.WM_CLOSE);
             }
         }
 
@@ -11272,20 +11149,7 @@ public unsafe partial class Control :
     /// </summary>
     private void WmGetControlName(ref Message m)
     {
-        string? name;
-
-        if (Site is not null)
-        {
-            name = Site.Name;
-        }
-        else
-        {
-            name = Name;
-        }
-
-        name ??= string.Empty;
-
-        MarshalStringToMessage(name, ref m);
+        MarshalStringToMessage(Site?.Name ?? Name ?? string.Empty, ref m);
     }
 
     /// <summary>
@@ -11665,7 +11529,7 @@ public unsafe partial class Control :
                 // we're skipping DefWndProc we have to do it ourselves.
                 if (button == MouseButtons.Right)
                 {
-                    PInvoke.SendMessage(this, PInvoke.WM_CONTEXTMENU, (WPARAM)HWND, (LPARAM)screenLocation);
+                    PInvokeCore.SendMessage(this, PInvokeCore.WM_CONTEXTMENU, (WPARAM)HWND, (LPARAM)screenLocation);
                 }
             }
 
@@ -11744,14 +11608,14 @@ public unsafe partial class Control :
             switch (nmhdr->code)
             {
                 case PInvoke.TTN_SHOW:
-                    m.ResultInternal = PInvoke.SendMessage(
+                    m.ResultInternal = PInvokeCore.SendMessage(
                         nmhdr->hwndFrom,
                         MessageId.WM_REFLECT | m.MsgInternal,
                         m.WParamInternal,
                         m.LParamInternal);
                     return;
                 case PInvoke.TTN_POP:
-                    PInvoke.SendMessage(
+                    PInvokeCore.SendMessage(
                         nmhdr->hwndFrom,
                         MessageId.WM_REFLECT | m.MsgInternal,
                         m.WParamInternal,
@@ -11799,7 +11663,7 @@ public unsafe partial class Control :
         HWND handle = NativeWindow.GetHandleFromWindowId((short)m.WParamInternal.LOWORD);
         if (!handle.IsNull && FromHandle(handle) is { } control)
         {
-            m.ResultInternal = PInvoke.SendMessage(
+            m.ResultInternal = PInvokeCore.SendMessage(
                 control,
                 MessageId.WM_REFLECT | m.MsgInternal,
                 (WPARAM)handle, m.LParamInternal);
@@ -12019,10 +11883,10 @@ public unsafe partial class Control :
         HWND hWnd = HWND.Null;
         switch (msg)
         {
-            case PInvoke.WM_CREATE:
+            case PInvokeCore.WM_CREATE:
                 hWnd = (HWND)m.LParamInternal;
                 break;
-            case PInvoke.WM_DESTROY:
+            case PInvokeCore.WM_DESTROY:
                 break;
             default:
                 hWnd = PInvoke.GetDlgItem(this, m.WParamInternal.HIWORD);
@@ -12283,31 +12147,31 @@ public unsafe partial class Control :
         // messages which the Ocx would own before passing them onto Control.WndProc.
         switch (m.MsgInternal)
         {
-            case PInvoke.WM_CAPTURECHANGED:
+            case PInvokeCore.WM_CAPTURECHANGED:
                 WmCaptureChanged(ref m);
                 break;
 
-            case PInvoke.WM_GETOBJECT:
+            case PInvokeCore.WM_GETOBJECT:
                 WmGetObject(ref m);
                 break;
 
-            case PInvoke.WM_COMMAND:
+            case PInvokeCore.WM_COMMAND:
                 WmCommand(ref m);
                 break;
 
-            case PInvoke.WM_CLOSE:
+            case PInvokeCore.WM_CLOSE:
                 WmClose(ref m);
                 break;
 
-            case PInvoke.WM_CONTEXTMENU:
+            case PInvokeCore.WM_CONTEXTMENU:
                 WmContextMenu(ref m);
                 break;
 
-            case PInvoke.WM_DISPLAYCHANGE:
+            case PInvokeCore.WM_DISPLAYCHANGE:
                 WmDisplayChange(ref m);
                 break;
 
-            case PInvoke.WM_DRAWITEM:
+            case PInvokeCore.WM_DRAWITEM:
                 if (m.WParamInternal != 0u)
                 {
                     WmOwnerDraw(ref m);
@@ -12315,15 +12179,15 @@ public unsafe partial class Control :
 
                 break;
 
-            case PInvoke.WM_ERASEBKGND:
+            case PInvokeCore.WM_ERASEBKGND:
                 WmEraseBkgnd(ref m);
                 break;
 
-            case PInvoke.WM_HELP:
+            case PInvokeCore.WM_HELP:
                 WmHelp(ref m);
                 break;
 
-            case PInvoke.WM_PAINT:
+            case PInvokeCore.WM_PAINT:
                 if (GetStyle(ControlStyles.UserPaint))
                 {
                     WmPaint(ref m);
@@ -12335,7 +12199,7 @@ public unsafe partial class Control :
 
                 break;
 
-            case PInvoke.WM_PRINTCLIENT:
+            case PInvokeCore.WM_PRINTCLIENT:
                 if (GetStyle(ControlStyles.UserPaint))
                 {
                     WmPrintClient(ref m);
@@ -12347,7 +12211,7 @@ public unsafe partial class Control :
 
                 break;
 
-            case PInvoke.WM_SYSCOMMAND:
+            case PInvokeCore.WM_SYSCOMMAND:
                 if ((m.WParamInternal & 0xFFF0) == PInvoke.SC_KEYMENU && ToolStripManager.ProcessMenuKey(ref m))
                 {
                     m.ResultInternal = (LRESULT)0;
@@ -12357,15 +12221,15 @@ public unsafe partial class Control :
                 DefWndProc(ref m);
                 break;
 
-            case PInvoke.WM_INPUTLANGCHANGE:
+            case PInvokeCore.WM_INPUTLANGCHANGE:
                 WmInputLangChange(ref m);
                 break;
 
-            case PInvoke.WM_INPUTLANGCHANGEREQUEST:
+            case PInvokeCore.WM_INPUTLANGCHANGEREQUEST:
                 WmInputLangChangeRequest(ref m);
                 break;
 
-            case PInvoke.WM_MEASUREITEM:
+            case PInvokeCore.WM_MEASUREITEM:
                 if (m.WParamInternal != 0u)
                 {
                     WmOwnerDraw(ref m);
@@ -12373,38 +12237,38 @@ public unsafe partial class Control :
 
                 break;
 
-            case PInvoke.WM_SETCURSOR:
+            case PInvokeCore.WM_SETCURSOR:
                 WmSetCursor(ref m);
                 break;
 
-            case PInvoke.WM_WINDOWPOSCHANGING:
+            case PInvokeCore.WM_WINDOWPOSCHANGING:
                 WmWindowPosChanging(ref m);
                 break;
 
-            case PInvoke.WM_CHAR:
-            case PInvoke.WM_KEYDOWN:
-            case PInvoke.WM_SYSKEYDOWN:
-            case PInvoke.WM_KEYUP:
-            case PInvoke.WM_SYSKEYUP:
+            case PInvokeCore.WM_CHAR:
+            case PInvokeCore.WM_KEYDOWN:
+            case PInvokeCore.WM_SYSKEYDOWN:
+            case PInvokeCore.WM_KEYUP:
+            case PInvokeCore.WM_SYSKEYUP:
                 WmKeyChar(ref m);
                 break;
 
-            case PInvoke.WM_CREATE:
+            case PInvokeCore.WM_CREATE:
                 WmCreate(ref m);
                 break;
 
-            case PInvoke.WM_DESTROY:
+            case PInvokeCore.WM_DESTROY:
                 WmDestroy(ref m);
                 break;
 
-            case PInvoke.WM_CTLCOLOR:
-            case PInvoke.WM_CTLCOLORBTN:
-            case PInvoke.WM_CTLCOLORDLG:
-            case PInvoke.WM_CTLCOLORMSGBOX:
-            case PInvoke.WM_CTLCOLORSCROLLBAR:
-            case PInvoke.WM_CTLCOLOREDIT:
-            case PInvoke.WM_CTLCOLORLISTBOX:
-            case PInvoke.WM_CTLCOLORSTATIC:
+            case PInvokeCore.WM_CTLCOLOR:
+            case PInvokeCore.WM_CTLCOLORBTN:
+            case PInvokeCore.WM_CTLCOLORDLG:
+            case PInvokeCore.WM_CTLCOLORMSGBOX:
+            case PInvokeCore.WM_CTLCOLORSCROLLBAR:
+            case PInvokeCore.WM_CTLCOLOREDIT:
+            case PInvokeCore.WM_CTLCOLORLISTBOX:
+            case PInvokeCore.WM_CTLCOLORSTATIC:
 
             // this is for the trinity guys. The case is if you've got a windows
             // forms edit or something hosted as an AX control somewhere, there isn't anyone to reflect
@@ -12421,12 +12285,12 @@ public unsafe partial class Control :
                 WmCtlColorControl(ref m);
                 break;
 
-            case PInvoke.WM_HSCROLL:
-            case PInvoke.WM_VSCROLL:
-            case PInvoke.WM_DELETEITEM:
-            case PInvoke.WM_VKEYTOITEM:
-            case PInvoke.WM_CHARTOITEM:
-            case PInvoke.WM_COMPAREITEM:
+            case PInvokeCore.WM_HSCROLL:
+            case PInvokeCore.WM_VSCROLL:
+            case PInvokeCore.WM_DELETEITEM:
+            case PInvokeCore.WM_VKEYTOITEM:
+            case PInvokeCore.WM_CHARTOITEM:
+            case PInvokeCore.WM_COMPAREITEM:
                 if (!ReflectMessage(m.LParamInternal, ref m))
                 {
                     DefWndProc(ref m);
@@ -12434,27 +12298,27 @@ public unsafe partial class Control :
 
                 break;
 
-            case PInvoke.WM_IME_CHAR:
+            case PInvokeCore.WM_IME_CHAR:
                 WmImeChar(ref m);
                 break;
 
-            case PInvoke.WM_IME_STARTCOMPOSITION:
+            case PInvokeCore.WM_IME_STARTCOMPOSITION:
                 WmImeStartComposition(ref m);
                 break;
 
-            case PInvoke.WM_IME_ENDCOMPOSITION:
+            case PInvokeCore.WM_IME_ENDCOMPOSITION:
                 WmImeEndComposition(ref m);
                 break;
 
-            case PInvoke.WM_IME_NOTIFY:
+            case PInvokeCore.WM_IME_NOTIFY:
                 WmImeNotify(ref m);
                 break;
 
-            case PInvoke.WM_KILLFOCUS:
+            case PInvokeCore.WM_KILLFOCUS:
                 WmKillFocus(ref m);
                 break;
 
-            case PInvoke.WM_LBUTTONDBLCLK:
+            case PInvokeCore.WM_LBUTTONDBLCLK:
                 WmMouseDown(ref m, MouseButtons.Left, 2);
                 if (GetStyle(ControlStyles.StandardDoubleClick))
                 {
@@ -12463,15 +12327,15 @@ public unsafe partial class Control :
 
                 break;
 
-            case PInvoke.WM_LBUTTONDOWN:
+            case PInvokeCore.WM_LBUTTONDOWN:
                 WmMouseDown(ref m, MouseButtons.Left, 1);
                 break;
 
-            case PInvoke.WM_LBUTTONUP:
+            case PInvokeCore.WM_LBUTTONUP:
                 WmMouseUp(ref m, MouseButtons.Left, 1);
                 break;
 
-            case PInvoke.WM_MBUTTONDBLCLK:
+            case PInvokeCore.WM_MBUTTONDBLCLK:
                 WmMouseDown(ref m, MouseButtons.Middle, 2);
                 if (GetStyle(ControlStyles.StandardDoubleClick))
                 {
@@ -12480,23 +12344,23 @@ public unsafe partial class Control :
 
                 break;
 
-            case PInvoke.WM_MBUTTONDOWN:
+            case PInvokeCore.WM_MBUTTONDOWN:
                 WmMouseDown(ref m, MouseButtons.Middle, 1);
                 break;
 
-            case PInvoke.WM_MBUTTONUP:
+            case PInvokeCore.WM_MBUTTONUP:
                 WmMouseUp(ref m, MouseButtons.Middle, 1);
                 break;
 
-            case PInvoke.WM_XBUTTONDOWN:
+            case PInvokeCore.WM_XBUTTONDOWN:
                 WmMouseDown(ref m, GetXButton(m.WParamInternal.HIWORD), 1);
                 break;
 
-            case PInvoke.WM_XBUTTONUP:
+            case PInvokeCore.WM_XBUTTONUP:
                 WmMouseUp(ref m, GetXButton(m.WParamInternal.HIWORD), 1);
                 break;
 
-            case PInvoke.WM_XBUTTONDBLCLK:
+            case PInvokeCore.WM_XBUTTONDBLCLK:
                 WmMouseDown(ref m, GetXButton(m.WParamInternal.HIWORD), 2);
                 if (GetStyle(ControlStyles.StandardDoubleClick))
                 {
@@ -12505,37 +12369,37 @@ public unsafe partial class Control :
 
                 break;
 
-            case PInvoke.WM_MOUSELEAVE:
+            case PInvokeCore.WM_MOUSELEAVE:
                 WmMouseLeave(ref m);
                 break;
 
-            case PInvoke.WM_DPICHANGED_BEFOREPARENT:
+            case PInvokeCore.WM_DPICHANGED_BEFOREPARENT:
                 WmDpiChangedBeforeParent(ref m);
                 m.ResultInternal = (LRESULT)0;
                 break;
 
-            case PInvoke.WM_DPICHANGED_AFTERPARENT:
+            case PInvokeCore.WM_DPICHANGED_AFTERPARENT:
                 WmDpiChangedAfterParent(ref m);
                 m.ResultInternal = (LRESULT)0;
                 break;
 
-            case PInvoke.WM_MOUSEMOVE:
+            case PInvokeCore.WM_MOUSEMOVE:
                 WmMouseMove(ref m);
                 break;
 
-            case PInvoke.WM_MOUSEWHEEL:
+            case PInvokeCore.WM_MOUSEWHEEL:
                 WmMouseWheel(ref m);
                 break;
 
-            case PInvoke.WM_MOVE:
+            case PInvokeCore.WM_MOVE:
                 WmMove(ref m);
                 break;
 
-            case PInvoke.WM_NOTIFY:
+            case PInvokeCore.WM_NOTIFY:
                 WmNotify(ref m);
                 break;
 
-            case PInvoke.WM_NOTIFYFORMAT:
+            case PInvokeCore.WM_NOTIFYFORMAT:
                 WmNotifyFormat(ref m);
                 break;
 
@@ -12543,11 +12407,11 @@ public unsafe partial class Control :
                 m.ResultInternal = (LRESULT)(nint)PInvoke.NFR_UNICODE;
                 break;
 
-            case PInvoke.WM_SHOWWINDOW:
+            case PInvokeCore.WM_SHOWWINDOW:
                 WmShowWindow(ref m);
                 break;
 
-            case PInvoke.WM_RBUTTONDBLCLK:
+            case PInvokeCore.WM_RBUTTONDBLCLK:
                 WmMouseDown(ref m, MouseButtons.Right, 2);
                 if (GetStyle(ControlStyles.StandardDoubleClick))
                 {
@@ -12556,45 +12420,45 @@ public unsafe partial class Control :
 
                 break;
 
-            case PInvoke.WM_RBUTTONDOWN:
+            case PInvokeCore.WM_RBUTTONDOWN:
                 WmMouseDown(ref m, MouseButtons.Right, 1);
                 break;
 
-            case PInvoke.WM_RBUTTONUP:
+            case PInvokeCore.WM_RBUTTONUP:
                 WmMouseUp(ref m, MouseButtons.Right, 1);
                 break;
 
-            case PInvoke.WM_SETFOCUS:
+            case PInvokeCore.WM_SETFOCUS:
                 WmSetFocus(ref m);
                 break;
 
-            case PInvoke.WM_MOUSEHOVER:
+            case PInvokeCore.WM_MOUSEHOVER:
                 WmMouseHover(ref m);
                 break;
 
-            case PInvoke.WM_WINDOWPOSCHANGED:
+            case PInvokeCore.WM_WINDOWPOSCHANGED:
                 WmWindowPosChanged(ref m);
                 break;
 
-            case PInvoke.WM_QUERYNEWPALETTE:
+            case PInvokeCore.WM_QUERYNEWPALETTE:
                 WmQueryNewPalette(ref m);
                 break;
 
-            case PInvoke.WM_UPDATEUISTATE:
+            case PInvokeCore.WM_UPDATEUISTATE:
                 WmUpdateUIState(ref m);
                 break;
 
-            case PInvoke.WM_PARENTNOTIFY:
+            case PInvokeCore.WM_PARENTNOTIFY:
                 WmParentNotify(ref m);
                 break;
 
-            case PInvoke.WM_SETTINGCHANGE:
+            case PInvokeCore.WM_SETTINGCHANGE:
                 if (GetExtendedState(ExtendedStates.InterestedInUserPreferenceChanged) && GetTopLevel())
                 {
                     SYSTEM_PARAMETERS_INFO_ACTION action = (SYSTEM_PARAMETERS_INFO_ACTION)(uint)m.WParamInternal;
 
                     // Left here for debugging purposes.
-                    string? text = m.LParamInternal == 0 ? null : new((char*)m.LParamInternal);
+                    // string? text = m.LParamInternal == 0 ? null : new((char*)m.LParamInternal);
 
                     if (action is SYSTEM_PARAMETERS_INFO_ACTION.SPI_SETNONCLIENTMETRICS && m.LParamInternal == 0)
                     {
@@ -12638,7 +12502,7 @@ public unsafe partial class Control :
 
                 break;
 
-            case PInvoke.WM_SYSCOLORCHANGE:
+            case PInvokeCore.WM_SYSCOLORCHANGE:
                 if (GetExtendedState(ExtendedStates.InterestedInUserPreferenceChanged) && GetTopLevel())
                 {
                     OnSystemColorsChanged(EventArgs.Empty);
@@ -12646,9 +12510,9 @@ public unsafe partial class Control :
 
                 break;
 
-            case PInvoke.WM_EXITMENULOOP:
-            case PInvoke.WM_INITMENUPOPUP:
-            case PInvoke.WM_MENUSELECT:
+            case PInvokeCore.WM_EXITMENULOOP:
+            case PInvokeCore.WM_INITMENUPOPUP:
+            case PInvokeCore.WM_MENUSELECT:
             default:
 
                 // If we received a thread execute message, then execute it.
@@ -12880,7 +12744,7 @@ public unsafe partial class Control :
 
     internal virtual Rectangle GetToolNativeScreenRectangle()
     {
-        PInvoke.GetWindowRect(this, out var rect);
+        PInvokeCore.GetWindowRect(this, out var rect);
         return rect;
     }
 

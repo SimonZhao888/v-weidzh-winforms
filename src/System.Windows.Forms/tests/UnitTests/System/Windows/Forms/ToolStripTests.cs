@@ -6903,7 +6903,7 @@ public partial class ToolStripTests
     public void ToolStrip_ProcessCmdKey_InvokeWithoutParent_ReturnsFalse(Keys keyData)
     {
         using SubToolStrip control = new();
-        Message m = new();
+        Message m = default;
         Assert.False(control.ProcessCmdKey(ref m, keyData));
         Assert.False(control.IsHandleCreated);
     }
@@ -6921,7 +6921,7 @@ public partial class ToolStripTests
         {
             Parent = parent
         };
-        Message msg = new();
+        Message msg = default;
         Assert.False(control.ProcessCmdKey(ref msg, keyData));
         Assert.False(control.IsHandleCreated);
     }
@@ -7149,7 +7149,7 @@ public partial class ToolStripTests
         using SubToolStrip control = new();
         Message m = new()
         {
-            Msg = (int)PInvoke.WM_MOUSEACTIVATE,
+            Msg = (int)PInvokeCore.WM_MOUSEACTIVATE,
             Result = 250
         };
         control.WndProc(ref m);
@@ -7176,7 +7176,7 @@ public partial class ToolStripTests
 
         Message m = new()
         {
-            Msg = (int)PInvoke.WM_MOUSEACTIVATE,
+            Msg = (int)PInvokeCore.WM_MOUSEACTIVATE,
             Result = 250
         };
         control.WndProc(ref m);
@@ -7211,7 +7211,7 @@ public partial class ToolStripTests
 
         Message m = new()
         {
-            Msg = (int)PInvoke.WM_MOUSEHOVER,
+            Msg = (int)PInvokeCore.WM_MOUSEHOVER,
             Result = 250
         };
 
@@ -7365,7 +7365,7 @@ public partial class ToolStripTests
         toolStripMenuItem.ShowDropDown();
         Assert.Equal(4, listToolStripMenuItem.DropDown.DisplayedItems.Count);
         toolStripMenuItem.HideDropDown();
-        Assert.Equal(0, listToolStripMenuItem.DropDown.DisplayedItems.Count);
+        Assert.Empty(listToolStripMenuItem.DropDown.DisplayedItems);
     }
 
     [WinFormsTheory]

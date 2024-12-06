@@ -162,8 +162,8 @@ public class BinaryFormatWriterTests
         stream.Position.Should().Be(0);
     }
 
-    public static IEnumerable<object[]?> TryWriteFrameworkObject_SupportedObjects_TestData =>
-        HashtableTests.Hashtables_TestData.Concat(
+    public static IEnumerable<object[]> TryWriteFrameworkObject_SupportedObjects_TestData =>
+        ((IEnumerable<object[]>)HashtableTests.Hashtables_TestData).Concat(
             ListTests.PrimitiveLists_TestData).Concat(
             ListTests.ArrayLists_TestData).Concat(
             PrimitiveTypeTests.Primitive_Data).Concat(
@@ -171,15 +171,15 @@ public class BinaryFormatWriterTests
             Array_TestData).Skip(9);
 
     public static IEnumerable<object[]?> TryWriteObject_UnsupportedObjects_TestData =>
-        HashtableTests.Hashtables_UnsupportedTestData.Concat(
+        ((IEnumerable<object[]?>)HashtableTests.Hashtables_UnsupportedTestData).Concat(
             ListTests.Lists_UnsupportedTestData).Concat(
             ListTests.ArrayLists_UnsupportedTestData).Concat(
             Array_UnsupportedTestData);
 
     public static TheoryData<object> SystemDrawing_TestData => new()
     {
-        new PointF(),
-        new RectangleF()
+        default(PointF),
+        default(RectangleF)
     };
 
     public static TheoryData<object> DrawingPrimitives_TestData => new()
@@ -206,26 +206,26 @@ public class BinaryFormatWriterTests
         SystemColors.ButtonFace
     };
 
-    public static TheoryData<string?[]> StringArray_Parse_Data => new()
-    {
+    public static TheoryData<Array> StringArray_Parse_Data =>
+    [
         new string?[] { "one", "two" },
         new string?[] { "yes", "no", null },
         new string?[] { "same", "same", "same" }
-    };
+    ];
 
-    public static TheoryData<Array> PrimitiveArray_Parse_Data => new()
-    {
+    public static TheoryData<Array> PrimitiveArray_Parse_Data =>
+    [
         new int[] { 1, 2, 3 },
         new int[] { 1, 2, 1 },
         new float[] { 1.0f, float.NaN, float.PositiveInfinity },
         new DateTime[] { DateTime.MaxValue }
-    };
+    ];
 
-    public static IEnumerable<object[]> Array_TestData => StringArray_Parse_Data.Concat(PrimitiveArray_Parse_Data);
+    public static IEnumerable<object[]> Array_TestData => ((IEnumerable<object[]>)StringArray_Parse_Data).Concat(PrimitiveArray_Parse_Data);
 
-    public static TheoryData<Array> Array_UnsupportedTestData => new()
-    {
-        new Point[] { new() },
+    public static TheoryData<Array> Array_UnsupportedTestData =>
+    [
+        new Point[] { default },
         new object[] { new() },
-    };
+    ];
 }

@@ -108,7 +108,7 @@ internal sealed class ToolStripAdornerWindowService : IDisposable
         }
 
         Point pt = new(c.Left, c.Top);
-        PInvoke.MapWindowPoints(c.Parent, _toolStripAdornerWindow, ref pt);
+        PInvokeCore.MapWindowPoints(c.Parent, _toolStripAdornerWindow, ref pt);
         return pt;
     }
 
@@ -284,7 +284,7 @@ internal sealed class ToolStripAdornerWindowService : IDisposable
         {
             switch (m.MsgInternal)
             {
-                case PInvoke.WM_NCHITTEST:
+                case PInvokeCore.WM_NCHITTEST:
                     m.ResultInternal = (LRESULT)PInvoke.HTTRANSPARENT;
                     break;
                 default:
