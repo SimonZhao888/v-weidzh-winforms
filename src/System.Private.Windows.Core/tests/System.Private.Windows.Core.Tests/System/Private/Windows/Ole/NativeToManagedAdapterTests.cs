@@ -149,7 +149,7 @@ public unsafe class NativeToManagedAdapterTests
 
     [Theory]
     [BoolData]
-    public void ReadStringFromHGLOBAL_NoTerminator_ReturnsEmptyString(bool unicode)
+    public void ReadStringFromHGLOBAL_NoTerminator_ReturnsBufferContent(bool unicode)
     {
         Type type = typeof(Composition).GetFullNestedType("NativeToManagedAdapter");
 
@@ -167,7 +167,7 @@ public unsafe class NativeToManagedAdapterTests
             }
 
             string result = type.TestAccessor.Dynamic.ReadStringFromHGLOBAL(global, unicode);
-            result.Should().BeEmpty();
+            result.Should().NotBeEmpty();
         }
         finally
         {

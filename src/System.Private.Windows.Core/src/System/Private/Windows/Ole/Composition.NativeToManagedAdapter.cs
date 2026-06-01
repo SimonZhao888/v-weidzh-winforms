@@ -195,8 +195,12 @@ internal unsafe partial class Composition<TOleServices, TNrbfSerializer, TDataFo
             // https://learn.microsoft.com/windows/win32/dataxchg/standard-clipboard-formats
             // https://learn.microsoft.com/windows/win32/shell/clipboard#cfstr_filename
             //
-            // CF_TEXT, CF_OEMTEXT, CF_UNICODETEXT, and CFSTR_FILENAME are supposed to have a null terminator.
-            // If we cannot find one in the buffer, assume it is corrupted and return an empty string.
+            // CF_TEXT, CF_OEMTEXT, CF_UNICODETEXT, and CFSTR_FILENAME are supposed to have a null terminator,
+            // but in practice many writers omit it and rely on GlobalAlloc's zero-initialized padding instead.
+            // To stay compatible with .NET 5–9 behavior (and with the wide range of well-formed-but-not-NUL-
+            // terminated payloads we see on the clipboard in the wild), we treat the terminator as optional:
+            // if a NUL is found within the allocation we truncate there, otherwise we return the entire buffer.
+            // Reads are always bounded by GlobalSize so we never read past the allocation. See issue #14322.
 
             try
             {
@@ -210,26 +214,23 @@ internal unsafe partial class Composition<TOleServices, TNrbfSerializer, TDataFo
                 {
                     ReadOnlySpan<char> chars = new((char*)buffer, size / sizeof(char));
                     int nullIndex = chars.IndexOf('\0');
-                    if (nullIndex < 0)
+                    // If a NUL is found, truncate at it (the well-formed case).
+                    // Otherwise, fall through and treat the whole bounded span as the string
+                    // (the missing-terminator case — see header comment).
+                    if (nullIndex >= 0)
                     {
-                        // Malformed, return empty string.
-                        return string.Empty;
+                        chars = chars[..nullIndex];
                     }
 
-                    chars = chars[..nullIndex];
-                    return chars.ToString();
+                    return chars.IsEmpty ? string.Empty : chars.ToString();
                 }
                 else
                 {
                     ReadOnlySpan<byte> bytes = new((byte*)buffer, size);
                     int nullIndex = bytes.IndexOf((byte)0);
-                    if (nullIndex < 0)
-                    {
-                        // Malformed, return empty string.
-                        return string.Empty;
-                    }
+                    int length = nullIndex >= 0 ? nullIndex : bytes.Length;
 
-                    return new string((sbyte*)buffer, 0, nullIndex);
+                    return length == 0 ? string.Empty : new string((sbyte*)buffer, 0, length);
                 }
             }
             finally
@@ -381,6 +382,10 @@ internal unsafe partial class Composition<TOleServices, TNrbfSerializer, TDataFo
                     // Lastly check to see if the data is an IStream.
                     result = TryGetIStreamData(dataObject, in request, out data);
                 }
+            }
+            catch (Win32Exception)
+            {
+                doNotContinue = true;
             }
             catch (Exception e) when (!e.IsCriticalException())
             {
