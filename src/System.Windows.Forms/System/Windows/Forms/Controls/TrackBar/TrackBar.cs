@@ -780,7 +780,6 @@ public partial class TrackBar : Control, ISupportInitialize
         }
 
         int drawnTickFrequency = _tickFrequency <= 0 ? 1 : _tickFrequency;
-        // Divide by 2 because otherwise the ticks appear as a solid line.
         uint range = (uint)(_maximum - _minimum);
         int maxTickCount = range == 0
             ? 1
