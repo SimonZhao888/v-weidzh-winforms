@@ -779,7 +779,7 @@ public partial class TrackBar : Control, ISupportInitialize
             return;
         }
 
-        int drawnTickFrequency = _tickFrequency;
+        int drawnTickFrequency = _tickFrequency <= 0 ? 1 : _tickFrequency;
         // Divide by 2 because otherwise the ticks appear as a solid line.
         uint range = (uint)(_maximum - _minimum);
         int maxTickCount = range == 0
@@ -788,10 +788,11 @@ public partial class TrackBar : Control, ISupportInitialize
 
         PInvokeCore.SendMessage(this, PInvoke.TBM_CLEARTICS, (WPARAM)1, (LPARAM)0);
 
-        for (int i = 1; i <= maxTickCount; i++)
+        for (int i = 1; i < maxTickCount; i++)
         {
             int tickValue = Minimum + i * drawnTickFrequency;
-            PInvokeCore.SendMessage(this, PInvoke.TBM_SETTIC, (WPARAM)0, (LPARAM)tickValue);
+            LRESULT lresult = PInvokeCore.SendMessage(this, PInvoke.TBM_SETTIC, (WPARAM)0, (LPARAM)tickValue);
+            Debug.Assert((bool)(BOOL)lresult);
         }
     }
 
