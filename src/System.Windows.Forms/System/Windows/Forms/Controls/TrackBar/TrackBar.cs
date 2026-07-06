@@ -779,31 +779,23 @@ public partial class TrackBar : Control, ISupportInitialize
             return;
         }
 
-        int drawnTickFrequency = _tickFrequency <= 0 ? 1 : _tickFrequency;
-        int maxTickCount = Orientation == Orientation.Horizontal ? Size.Width : Size.Height;
+        int drawnTickFrequency = _tickFrequency;
+        // Divide by 2 because otherwise the ticks appear as a solid line.
+        int maxTickCount = (Orientation == Orientation.Horizontal ? Size.Width : Size.Height) / 2;
         uint range = (uint)(_maximum - _minimum);
+        if (range > maxTickCount && maxTickCount != 0)
+        {
+            int calculatedTickFrequency = (int)(range / maxTickCount);
+            if (calculatedTickFrequency > drawnTickFrequency)
+            {
+                drawnTickFrequency = calculatedTickFrequency;
+            }
+        }
 
-        // Remove auto-generated interior ticks first; endpoints remain managed by the native control.
         PInvokeCore.SendMessage(this, PInvoke.TBM_CLEARTICS, (WPARAM)1, (LPARAM)0);
-
-        // No interior ticks are possible for empty/1-step ranges, or when there is no drawable size.
-        if (maxTickCount <= 0 || range <= 1)
+        for (int i = _minimum + drawnTickFrequency; i <= _maximum - drawnTickFrequency; i += drawnTickFrequency)
         {
-            return;
-        }
-
-        // Ensure the visual tick count does not exceed available pixels.
-        // This keeps ticks distributed across the full value range without over-drawing.
-        int minimumStepForSize = ((int)range + maxTickCount - 1) / maxTickCount;
-        if (minimumStepForSize > drawnTickFrequency)
-        {
-            drawnTickFrequency = minimumStepForSize;
-        }
-
-        // Advance by value across the full track range, adding only interior ticks.
-        for (long tickValue = _minimum + drawnTickFrequency; tickValue < _maximum; tickValue += drawnTickFrequency)
-        {
-            LRESULT lresult = PInvokeCore.SendMessage(this, PInvoke.TBM_SETTIC, (WPARAM)0, (LPARAM)(int)tickValue);
+            LRESULT lresult = PInvokeCore.SendMessage(this, PInvoke.TBM_SETTIC, lParam: (IntPtr)i);
             Debug.Assert((bool)(BOOL)lresult);
         }
     }
@@ -1005,6 +997,27 @@ public partial class TrackBar : Control, ISupportInitialize
     {
         base.OnSystemColorsChanged(e);
         RedrawControl();
+    }
+
+    protected override void OnSizeChanged(EventArgs e)
+    {
+        base.OnSizeChanged(e);
+
+        if (!IsHandleCreated)
+        {
+            return;
+        }
+
+        bool recreateHandle = ShouldRecreateHandle();
+        if (recreateHandle)
+        {
+            RecreateHandle();
+        }
+        else if (!_autoDrawTicks)
+        {
+            DrawTicksManually();
+            Invalidate();
+        }
     }
 
     /// <summary>
