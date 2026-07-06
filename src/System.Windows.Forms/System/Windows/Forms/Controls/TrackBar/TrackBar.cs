@@ -919,9 +919,9 @@ public partial class TrackBar : Control, ISupportInitialize
         if (e is HandledMouseEventArgs hme)
         {
             if (hme.Handled)
-        {
-            return;
-        }
+            {
+                return;
+            }
 
             hme.Handled = true;
         }
