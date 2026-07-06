@@ -10789,6 +10789,11 @@ O rastreamento de pilha em que a operação ilegal ocorreu foi:
         <target state="translated">O número de posições entre marcas de tiques.</target>
         <note />
       </trans-unit>
+      <trans-unit id="TrackBarTickFrequencyError">
+        <source>TickFrequency: Value '{0}' must be greater than or equal to 0.</source>
+        <target state="new">TickFrequency: Value '{0}' must be greater than or equal to 0.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="TrackBarTickStyleDescr">
         <source>Indicates where the ticks appear on the TrackBar.</source>
         <target state="translated">Indica onde os tiques são exibidos em TrackBar.</target>

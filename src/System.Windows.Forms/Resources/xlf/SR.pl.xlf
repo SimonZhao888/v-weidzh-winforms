@@ -10789,6 +10789,11 @@ Stos śledzenia, w którym wystąpiła zabroniona operacja:
         <target state="translated">Liczba pozycji między znacznikami osi.</target>
         <note />
       </trans-unit>
+      <trans-unit id="TrackBarTickFrequencyError">
+        <source>TickFrequency: Value '{0}' must be greater than or equal to 0.</source>
+        <target state="new">TickFrequency: Value '{0}' must be greater than or equal to 0.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="TrackBarTickStyleDescr">
         <source>Indicates where the ticks appear on the TrackBar.</source>
         <target state="translated">Wskazuje, gdzie w obiekcie TrackBar mają się pojawić znaczniki osi.</target>

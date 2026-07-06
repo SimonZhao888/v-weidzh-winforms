@@ -562,6 +562,11 @@ public partial class TrackBar : Control, ISupportInitialize
         get => _tickFrequency;
         set
         {
+            if (value < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(value), value, string.Format(SR.TrackBarTickFrequencyError, value));
+            }
+
             if (_tickFrequency == value)
             {
                 return;
@@ -780,14 +785,20 @@ public partial class TrackBar : Control, ISupportInitialize
         }
 
         int drawnTickFrequency = _tickFrequency <= 0 ? 1 : _tickFrequency;
+        // Estimate the maximum number of ticks that can be accommodated using the control's pixel dimensions.
+        int maxTickCount = (Orientation == Orientation.Horizontal ? Size.Width : Size.Height);
         uint range = (uint)(_maximum - _minimum);
-        int maxTickCount = range == 0
+        // Calculate the number of ticks to draw based on the frequency.
+        int exceptionTickCount = range == 0
             ? 1
-            : (int)range / drawnTickFrequency + 1;
+            : (int)range / drawnTickFrequency;
+        if (maxTickCount > exceptionTickCount)
+        {
+            maxTickCount = exceptionTickCount;
+        }
 
         PInvokeCore.SendMessage(this, PInvoke.TBM_CLEARTICS, (WPARAM)1, (LPARAM)0);
-
-        for (int i = 1; i < maxTickCount; i++)
+        for (int i = 1; i <= maxTickCount; i++)
         {
             int tickValue = Minimum + i * drawnTickFrequency;
             LRESULT lresult = PInvokeCore.SendMessage(this, PInvoke.TBM_SETTIC, (WPARAM)0, (LPARAM)tickValue);
@@ -908,9 +919,9 @@ public partial class TrackBar : Control, ISupportInitialize
         if (e is HandledMouseEventArgs hme)
         {
             if (hme.Handled)
-            {
-                return;
-            }
+        {
+            return;
+        }
 
             hme.Handled = true;
         }
