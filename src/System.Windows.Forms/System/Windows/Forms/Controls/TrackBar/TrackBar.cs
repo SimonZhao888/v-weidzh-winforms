@@ -780,23 +780,30 @@ public partial class TrackBar : Control, ISupportInitialize
         }
 
         int drawnTickFrequency = _tickFrequency <= 0 ? 1 : _tickFrequency;
-        // Estimate the maximum number of ticks that can be accommodated using the control's pixel dimensions.
-        int maxTickCount = (Orientation == Orientation.Horizontal ? Size.Width : Size.Height);
+        int maxTickCount = Orientation == Orientation.Horizontal ? Size.Width : Size.Height;
         uint range = (uint)(_maximum - _minimum);
-        // Calculate the number of ticks to draw based on the frequency.
-        int exceptionTickCount = range == 0
-            ? 1
-            : (int)range / drawnTickFrequency;
-        if (maxTickCount > exceptionTickCount)
+
+        // Remove auto-generated interior ticks first; endpoints remain managed by the native control.
+        PInvokeCore.SendMessage(this, PInvoke.TBM_CLEARTICS, (WPARAM)1, (LPARAM)0);
+
+        // No interior ticks are possible for empty/1-step ranges, or when there is no drawable size.
+        if (maxTickCount <= 0 || range <= 1)
         {
-            maxTickCount = exceptionTickCount;
+            return;
         }
 
-        PInvokeCore.SendMessage(this, PInvoke.TBM_CLEARTICS, (WPARAM)1, (LPARAM)0);
-        for (int i = 1; i <= maxTickCount; i++)
+        // Ensure the visual tick count does not exceed available pixels.
+        // This keeps ticks distributed across the full value range without over-drawing.
+        int minimumStepForSize = ((int)range + maxTickCount - 1) / maxTickCount;
+        if (minimumStepForSize > drawnTickFrequency)
         {
-            int tickValue = Minimum + i * drawnTickFrequency;
-            LRESULT lresult = PInvokeCore.SendMessage(this, PInvoke.TBM_SETTIC, (WPARAM)0, (LPARAM)tickValue);
+            drawnTickFrequency = minimumStepForSize;
+        }
+
+        // Advance by value across the full track range, adding only interior ticks.
+        for (long tickValue = _minimum + drawnTickFrequency; tickValue < _maximum; tickValue += drawnTickFrequency)
+        {
+            LRESULT lresult = PInvokeCore.SendMessage(this, PInvoke.TBM_SETTIC, (WPARAM)0, (LPARAM)(int)tickValue);
             Debug.Assert((bool)(BOOL)lresult);
         }
     }
