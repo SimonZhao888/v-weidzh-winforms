@@ -10789,11 +10789,6 @@ El seguimiento de la pila donde tuvo lugar la operación no válida fue:
         <target state="translated">Número de posiciones entre marcas de paso.</target>
         <note />
       </trans-unit>
-      <trans-unit id="TrackBarTickFrequencyError">
-        <source>TickFrequency: Value '{0}' must be greater than or equal to 0.</source>
-        <target state="new">TickFrequency: Value '{0}' must be greater than or equal to 0.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="TrackBarTickStyleDescr">
         <source>Indicates where the ticks appear on the TrackBar.</source>
         <target state="translated">Indica dónde aparecerán los pasos en la barra de seguimiento.</target>

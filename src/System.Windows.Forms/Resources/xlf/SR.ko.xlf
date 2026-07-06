@@ -10789,11 +10789,6 @@ Stack trace where the illegal operation occurred was:
         <target state="translated">눈금 사이의 위치 개수입니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="TrackBarTickFrequencyError">
-        <source>TickFrequency: Value '{0}' must be greater than or equal to 0.</source>
-        <target state="new">TickFrequency: Value '{0}' must be greater than or equal to 0.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="TrackBarTickStyleDescr">
         <source>Indicates where the ticks appear on the TrackBar.</source>
         <target state="translated">TrackBar에서 눈금이 표시되는 위치를 나타냅니다.</target>

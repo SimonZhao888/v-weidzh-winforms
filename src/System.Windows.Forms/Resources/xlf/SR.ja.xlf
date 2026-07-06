@@ -10789,11 +10789,6 @@ Stack trace where the illegal operation occurred was:
         <target state="translated">目盛りマーク間の位置の数です。</target>
         <note />
       </trans-unit>
-      <trans-unit id="TrackBarTickFrequencyError">
-        <source>TickFrequency: Value '{0}' must be greater than or equal to 0.</source>
-        <target state="new">TickFrequency: Value '{0}' must be greater than or equal to 0.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="TrackBarTickStyleDescr">
         <source>Indicates where the ticks appear on the TrackBar.</source>
         <target state="translated">目盛りをトラックバーのどこに表示するか示します。</target>

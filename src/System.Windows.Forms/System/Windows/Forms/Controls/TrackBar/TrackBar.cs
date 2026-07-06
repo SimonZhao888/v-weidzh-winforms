@@ -562,11 +562,6 @@ public partial class TrackBar : Control, ISupportInitialize
         get => _tickFrequency;
         set
         {
-            if (value < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(value), value, string.Format(SR.TrackBarTickFrequencyError, value));
-            }
-
             if (_tickFrequency == value)
             {
                 return;

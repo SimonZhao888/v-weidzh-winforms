@@ -6184,9 +6184,6 @@ Stack trace where the illegal operation occurred was:
   <data name="TrackBarSmallChangeError" xml:space="preserve">
     <value>SmallChange: Value '{0}' must be greater than or equal to 0.</value>
   </data>
-  <data name="TrackBarTickFrequencyError" xml:space="preserve">
-    <value>TickFrequency: Value '{0}' must be greater than or equal to 0.</value>
-  </data>
   <data name="TrackBarTickFrequencyDescr" xml:space="preserve">
     <value>The number of positions between tick marks.</value>
   </data>
