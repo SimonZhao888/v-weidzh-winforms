@@ -9,8 +9,6 @@ internal abstract partial class SelectionPanelBase
 {
     protected class SelectionPanelRadioButton : RadioButton
     {
-        private const int WM_PAINT = 0x000F;
-
         public SelectionPanelRadioButton()
         {
             AutoCheck = false;
@@ -22,13 +20,13 @@ internal abstract partial class SelectionPanelBase
         {
             base.WndProc(ref m);
 
-            if (m.Msg != WM_PAINT || !Focused || !ShowFocusCues)
+            if (m.MsgInternal != PInvokeCore.WM_PAINT || !Focused || !ShowFocusCues)
             {
                 return;
             }
 
             Rectangle focusBounds = ClientRectangle;
-            focusBounds.Inflate(-3, -3);
+            focusBounds.Inflate(-LogicalToDeviceUnits(3), -LogicalToDeviceUnits(3));
             if (focusBounds.Width <= 0 || focusBounds.Height <= 0)
             {
                 return;
