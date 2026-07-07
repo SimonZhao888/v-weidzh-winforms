@@ -9,12 +9,34 @@ internal abstract partial class SelectionPanelBase
 {
     protected class SelectionPanelRadioButton : RadioButton
     {
+        private const int WM_PAINT = 0x000F;
+
         public SelectionPanelRadioButton()
         {
             AutoCheck = false;
         }
 
         protected override bool ShowFocusCues => true;
+
+        protected override void WndProc(ref Message m)
+        {
+            base.WndProc(ref m);
+
+            if (m.Msg != WM_PAINT || !Focused || !ShowFocusCues)
+            {
+                return;
+            }
+
+            Rectangle focusBounds = ClientRectangle;
+            focusBounds.Inflate(-3, -3);
+            if (focusBounds.Width <= 0 || focusBounds.Height <= 0)
+            {
+                return;
+            }
+
+            using Graphics g = CreateGraphics();
+            ControlPaint.DrawFocusRectangle(g, focusBounds, ForeColor, BackColor);
+        }
 
         protected override bool IsInputKey(Keys keyData) => keyData switch
         {
