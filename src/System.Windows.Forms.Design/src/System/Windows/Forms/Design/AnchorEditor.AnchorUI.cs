@@ -216,7 +216,7 @@ public sealed partial class AnchorEditor
                 ControlPaint.DrawButton(e.Graphics, rc, ButtonState.Normal);
                 if (Application.IsDarkModeEnabled)
                 {
-                    e.Graphics.FillRectangle(new SolidBrush(BackColor), rc);
+                    e.Graphics.Clear(BackColor);
                 }
             }
         }
