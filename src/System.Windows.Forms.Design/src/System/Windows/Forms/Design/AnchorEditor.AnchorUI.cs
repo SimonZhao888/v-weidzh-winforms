@@ -213,15 +213,10 @@ public sealed partial class AnchorEditor
             protected override void OnPaint(PaintEventArgs e)
             {
                 Rectangle rc = ClientRectangle;
-
+                ControlPaint.DrawButton(e.Graphics, rc, ButtonState.Normal);
                 if (Application.IsDarkModeEnabled)
                 {
-                    e.Graphics.FillRectangle(SystemBrushes.ControlDark, rc);
-                    e.Graphics.DrawRectangle(SystemPens.WindowFrame, rc.X, rc.Y, rc.Width - 1, rc.Height - 1);
-                }
-                else
-                {
-                    ControlPaint.DrawButton(e.Graphics, rc, ButtonState.Normal);
+                    e.Graphics.FillRectangle(new SolidBrush(BackColor), rc);
                 }
             }
         }
