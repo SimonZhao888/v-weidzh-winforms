@@ -2782,12 +2782,16 @@ public partial class TreeView : Control
                 if (renderinfo is not null && renderinfo.Font is not null)
                 {
                     // Mess with the DC directly...
-                    PInvokeCore.SelectObject(nmtvcd->nmcd.hdc, renderinfo.FontHandle);
+                    Debug.Assert(node._propBag is not null);
+                    if (node._propBag is not null && node._propBag.Font is not null)
+                    {
+                        PInvokeCore.SelectObject(nmtvcd->nmcd.hdc, node._propBag.FontHandle);
 
-                    // There is a problem in winctl that clips node fonts if the fontSize
-                    // is larger than the treeView font size. The behavior is much better in comctl 5 and above.
-                    m.ResultInternal = (LRESULT)(nint)PInvoke.CDRF_NEWFONT;
-                    return;
+                        // There is a problem in winctl that clips node fonts if the fontSize
+                        // is larger than the treeView font size. The behavior is much better in comctl 5 and above.
+                        m.ResultInternal = (LRESULT)(nint)PInvoke.CDRF_NEWFONT;
+                        return;
+                    }
                 }
 
                 // fall through and do the default drawing work
@@ -2863,12 +2867,12 @@ public partial class TreeView : Control
     /// </summary>
     protected OwnerDrawPropertyBag GetItemRenderStyles(TreeNode? node, int state)
     {
+        OwnerDrawPropertyBag retval = new();
         if (node is null || node._propBag is null)
         {
-            return new();
+            return retval;
         }
 
-        OwnerDrawPropertyBag retval = node._propBag;
         // we only change colors if we're displaying things normally
         if ((state &
             (int)(NMCUSTOMDRAW_DRAW_STATE_FLAGS.CDIS_SELECTED |
